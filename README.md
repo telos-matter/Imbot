@@ -4,3 +4,6 @@ An imporved interface for the existing Java [Robot](https://docs.oracle.com/java
 
 ## How-to:
 Check out the existing example for a quick get-started. But never the less just <b>init</b>ialize imbot and get started!
+
+<a href="http://google.com/" target="_blank">Hello, world!</a>
+
