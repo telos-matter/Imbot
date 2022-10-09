@@ -287,21 +287,92 @@ public class imbot {
 		return locateImage (readImage(path));
 	}
 	
-	
 	/**
 	 * Locates an image within the screen
 	 * @param image
 	 * @return	A {@link Point} representing the upper-left location of where
 	 * the image has been found on the screen, or null if found nothing
 	 * @apiNote Only works with PNG type of images as that they have a
-	 * lossless compression
+	 * lossless compression.
+	 * @apiNote Some screens or operating systems (such as MacOS), not sure which, do
+	 * NOT take physically accurate screenshot using their normal screenshot binding.
+	 * As they increase the actual physical resolution for better screenshot. This
+	 * won't work with locateImage as it uses the actual physical resolution of the screen.
+	 * Use {@link #captureScreen(Rectangle)} and {@link #storeImage(BufferedImage, String)}
+	 * instead to be certain when taking screenshots and saving them!
 	 */
 	public static Point locateImage (BufferedImage image) {
 		BufferedImage capture = robot.createScreenCapture(SCREEN_RECTANGLE);
 		
-		// TODO: YET TO BE IMPLEMENTED
+		int x_limit = capture.getWidth() -image.getWidth() +1;
+		int y_limit = capture.getHeight() -image.getHeight() +1;
+		for (int x = 0; x < x_limit; x++) {
+			for (int y = 0; y < y_limit; y++) {
+				if (isSubImage(capture, image, x, y)) {
+					return new Point (x, y);
+				}
+			}
+		}
 		
 		return null;
+	}
+	
+	/**
+	 * @apiNote Helper method for {@link #locateImage(BufferedImage)}
+	 */
+	private static boolean isSubImage (BufferedImage capture, BufferedImage image, int start_x, int start_y) {
+		int width = image.getWidth();
+		int height = image.getHeight();
+		
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				if (capture.getRGB(start_x +x,  start_y +y) != image.getRGB(x, y)) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * @return A screenshot of the entire screen
+	 */
+	public static BufferedImage captureScreen () {
+		return captureScreen (SCREEN_RECTANGLE);
+	}
+	
+	/**
+	 * @param starting_point
+	 * @return A screenshot of the screen from the starting_point to bottom-right end
+	 */
+	public static BufferedImage captureScreen (Point starting_point) {
+		return captureScreen(new Rectangle(starting_point.x, starting_point.y, SCREEN_WIDTH -starting_point.x, SCREEN_HEIGHT -starting_point.y));
+	}
+	
+	/**
+	 * @param zone
+	 * @return A screenshot of the specified zone on the screen
+	 */
+	public static BufferedImage captureScreen (Rectangle zone) {
+		return robot.createScreenCapture(zone);
+	}
+	
+	/**
+	 * @param image	Image to store
+	 * @param path	Path of the folder in which to store the image. For example "/Users/telos_matter/Pictures"
+	 * @param name	Name under which to store the image
+	 * @return True if the image was stored successfully, False otherwise.
+	 */
+	public static boolean storeImage (BufferedImage image, String path, String name) {
+		try {
+			ImageIO.write(image, "png", new File(path + File.separatorChar +name +".png"));
+			return true;
+		} catch (IOException e) {
+			System.out.println("Unable to save image under: " +path + File.separatorChar +name +".png");
+			e.printStackTrace();
+			return false;
+		}
 	}
 	
 	/**
