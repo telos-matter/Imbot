@@ -252,6 +252,8 @@ public class imbot {
 	 * @param s	Number of seconds to wait between each report
 	 */
 	public static void reportLocation (double s) {
+		setExitIfInt(false);
+		
 		while(true) {
 			sleeps(s);
 			System.out.println(getLocation());
