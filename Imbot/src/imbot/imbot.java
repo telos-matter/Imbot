@@ -368,8 +368,7 @@ public class imbot {
 	 */
 	public static boolean storeImage (BufferedImage image, String path, String name) {
 		try {
-			ImageIO.write(image, "png", new File(path + File.separatorChar +name +".png"));
-			return true;
+			return ImageIO.write(image, "png", new File(path + File.separatorChar +name +".png"));
 		} catch (IOException e) {
 			System.out.println("Unable to save image under: " +path + File.separatorChar +name +".png");
 			e.printStackTrace();
