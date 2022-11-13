@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import exceptions.AlreadyInitException;
+import exceptions.ImproperSizeException;
 import exceptions.OutOfScreenBoundsException;
 
 /**
@@ -87,6 +88,14 @@ public class imbot {
 		} else {
 			throw new AlreadyInitException();
 		}
+	}
+	
+	/**
+	 * Sleep a random amount of seconds between
+	 * s -delta and s +delta
+	 */
+	public static void sleepRandom (double s, double delta) {
+		sleeps(Math.random()*2*delta +(s -delta));
 	}
 	
 	/**
@@ -192,6 +201,21 @@ public class imbot {
 			throw new OutOfScreenBoundsException(x, y);
 		}
 	}
+	
+	/**
+	 * @param location	of the pixel on the screen
+	 * @param color	to check against
+	 * @param dc	(delta color) difference in color
+	 * @return	True if the color difference (by euclidean distance) is
+	 * less than or equal to , False otherwise.
+	 */
+	public static boolean isColor (Point location, Color color, double dc) {
+		Color screen_color = getColor(location);
+		
+		return Math.sqrt(Math.pow(color.getRed() -screen_color.getRed(), 2) 
+					 +Math.pow(color.getGreen() -screen_color.getGreen(), 2)
+					 +Math.pow(color.getBlue() -screen_color.getBlue(), 2)) <= dc;
+	}
     
     /**
      * <p>Simulate user-like mouse movement to the passed x and y
@@ -280,6 +304,13 @@ public class imbot {
 	}
 	
 	/**
+	 * Same as {@link #realisticMove(int, int)} but with a {@link Point}
+	 */
+	public static void realisticMove (Point location) {
+		realisticMove(location.x, location.y);
+	}
+	
+	/**
 	 * Slides the mouse by dx and dy with user-like mouse movement 
 	 * @implNote Uses {@link #realisticMove(int, int)}
 	 */
@@ -289,13 +320,45 @@ public class imbot {
 	}
 	
 	/**
+	 * Realistically move around within an area 
+	 * of the current mouse location for a random
+	 * amount of time
+	 * @param area	to hover around in
+	 * @param s	time to hover for
+	 * @param delta	the min and max time difference
+	 * @implNote Uses {@link #realisticMove(int, int)}
+	 */
+	public static void realisticHover (int area, double s, double delta) {
+		Point location = getLocation();
+		int min_x = location.x -area;
+		int min_y = location.y -area;
+		
+		s = (Math.random()*2*delta +(s -delta)) * 1000000000 ;
+		
+		long start;
+		do {
+			start = System.nanoTime();
+			realisticMove((int)(Math.random()*2*area +min_x), (int)(Math.random()*2*area +min_y));
+			s -= System.nanoTime() -start;
+		} while (s >= 0);
+			
+	}
+	
+	/**
 	 * First moves the mouse to x and y with user-like mouse movement 
 	 * then left clicks
 	 * @implNote Uses {@link #realisticMove(int, int)}
 	 */
 	public static void realisticClick (int x, int y) {
-		move(x, y);
+		realisticMove(x, y);
 		click();
+	}
+	
+	/**
+	 * Same as {@link #realisticClick(int, int))} but with {@link Point}
+	 */
+	public static void realisticClick (Point location) {
+		realisticClick(location.x, location.y);
 	}
 	
 	
@@ -502,6 +565,26 @@ public class imbot {
 	}
 	
 	/**
+	 * Continuously report location of the mouse on 
+	 * the screen trough the console. Useful when trying to hard code location 
+	 * of certain elements into a script
+	 * @param s	Number of seconds to wait between each report
+	 * @implNote	The method never exits,
+	 * as it contains an infinite loop. It's not meant
+	 * to be used within a script
+	 */
+	public static void reportLocation (double s) {
+		setExitIfInt(false);
+
+		Point location;
+		while(true) {
+			sleeps(s);
+			location = getLocation();
+			System.out.println(String.format("(%d,%d)", location.x, location.y));
+		}
+	}
+	
+	/**
 	 * <p>Continuously report the location of the mouse on 
 	 * the screen and the color at that location.
 	 * <p>Useful when trying to hard code locations
@@ -620,6 +703,8 @@ public class imbot {
 	/**
 	 * Searches for an image on the screen
 	 * for a set period of time.
+	 * Shorthand for {@link #searchForImage(BufferedImage, BufferedImage, int, double, double)}
+	 * and {@link #captureScreen()} with default values of 0 and 0 for dp and dc
 	 * @param image	to be searched for
 	 * @param s	amount of seconds to search for. Negative values
 	 * mean search forever
@@ -627,13 +712,25 @@ public class imbot {
 	 * located on the screen, or null if not found.
 	 */
 	public static Point searchForImage (BufferedImage image, double s) {
+		return searchForImage(image, SCREEN_RECTANGLE, 0, 0, s);
+	}
+	
+	/**
+	 * Searches for an image for a set period of time. Uses
+	 * {@link #locateImage(BufferedImage, BufferedImage, int, double)}
+	 * @param s	amount of seconds to search for. Negative values
+	 * mean search forever
+	 * @return	Upper-left location of where the image is
+	 * located, or null if not found.
+	 */
+	public static Point searchForImage (BufferedImage image, Rectangle zone, int dp, double dc, double s) {
 		s = (s < 0)? Double.POSITIVE_INFINITY : s * 1000000000;
 		
 		Point location;
 		long start;
 		do {
 			start = System.nanoTime();
-			location = locateImage(image);
+			location = locateImage(image, imbot.captureScreen(zone), dp, dc);
 			s -= System.nanoTime() -start;
 			
 			if (location != null) {
@@ -651,11 +748,32 @@ public class imbot {
 		return locateImage(loadImage(path));
 	}
 	
+	
 	/**
-	 * Locates an image within the screen
-	 * @param image
+	 * Shorthand for {@link #locateImage(BufferedImage, Rectangle, int, double)}
+	 * with the entire screen and default values of 0 and 0 for dp and dc.
+	 */
+	public static Point locateImage (BufferedImage image) {
+		return locateImage(image, SCREEN_RECTANGLE, 0, 0);
+	}
+	
+	/**
+	 * Shorthand for {@link #locateImage(BufferedImage, BufferedImage, int, double)}
+	 * with the searched image being a screen capture of the specified zone
+	 */
+	public static Point locateImage (BufferedImage image, Rectangle zone, int dp, double dc) {
+		return locateImage(image, robot.createScreenCapture(zone), dp, dc);
+	}
+	
+	/**
+	 * Locates an image within another
+	 * @param small	Image to look for
+	 * @param big	Image to look in for the small one
+	 * @param dp	delta_pixel: Threshold of the number of wrong pixel colors
+	 * @param dc	delta_color: Threshold of the difference in 
+	 * colors. Calculated with euclidean distance
 	 * @return	A {@link Point} representing the upper-left location of where
-	 * the image has been found on the screen, or null if found nothing
+	 * the small image has been found in the big one, or null if found nothing
 	 * @implNote Only works with PNG type of images as that they have a
 	 * lossless compression.
 	 * @implNote Some screens or operating systems (such as MacOS), not sure which, do
@@ -665,14 +783,17 @@ public class imbot {
 	 * Use {@link #captureScreen(Rectangle)} and {@link #saveImage(BufferedImage, String, String)}
 	 * instead to be certain when taking screenshots and saving them!
 	 */
-	public static Point locateImage (BufferedImage image) {
-		BufferedImage capture = robot.createScreenCapture(SCREEN_RECTANGLE);
+	public static Point locateImage (BufferedImage small, BufferedImage big, int dp, double dc) {
+		if (small.getWidth() > big.getWidth() || small.getHeight() > big.getHeight()) {
+			throw new ImproperSizeException();
+		}
 		
-		int x_limit = capture.getWidth() -image.getWidth() +1;
-		int y_limit = capture.getHeight() -image.getHeight() +1;
+		int x_limit = big.getWidth() -small.getWidth() +1;
+		int y_limit = big.getHeight() -small.getHeight() +1;
+		
 		for (int x = 0; x < x_limit; x++) {
 			for (int y = 0; y < y_limit; y++) {
-				if (isSubImage(capture, image, x, y)) {
+				if (isSubImage(small, big, x, y, dp,  dc)) {
 					return new Point (x, y);
 				}
 			}
@@ -682,21 +803,44 @@ public class imbot {
 	}
 	
 	/**
-	 * @implNote Helper method for {@link #locateImage(BufferedImage)}
+	 * @implNote Helper method for {@link #locateImage(BufferedImage, BufferedImage, double, double)}
 	 */
-	private static boolean isSubImage (BufferedImage capture, BufferedImage image, int start_x, int start_y) {
-		int width = image.getWidth();
-		int height = image.getHeight();
-		
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				if (capture.getRGB(start_x +x,  start_y +y) != image.getRGB(x, y)) {
-					return false;
+	private static boolean isSubImage (BufferedImage small, BufferedImage big, int start_x, int start_y, int dp, double dc) {
+		if (dc == 0) {
+			for (int x = 0; x < small.getWidth(); x++) {
+				for (int y = 0; y < small.getHeight(); y++) {
+					if (big.getRGB(start_x +x,  start_y +y) != small.getRGB(x, y)) {
+						if ((--dp) < 0) {
+							return false;
+						}
+					}
 				}
 			}
+			
+			return true;
+		} else {
+			int rs, gs, bs, rb, gb, bb, s, b;
+			for (int x = 0; x < small.getWidth(); x++) {
+				for (int y = 0; y < small.getHeight(); y++) {
+					s = small.getRGB(x, y);
+					bs = s & 0xFF;
+					gs = (s >> 8) & 0xFF;
+					rs = (s >> 16) & 0xFF;
+					b = big.getRGB(start_x +x,  start_y +y);
+					bb = b & 0xFF;
+					gb = (b >> 8) & 0xFF;
+					rb = (b >> 16) & 0xFF;
+					
+					if (Math.sqrt(Math.pow(rb -rs, 2) +Math.pow(gb -gs, 2) +Math.pow(bb -bs, 2)) > dc) {
+						if ((--dp) < 0) {
+							return false;
+						}
+					}
+				}
+			}
+			
+			return true;
 		}
-		
-		return true;
 	}
 	
 	/**
@@ -736,6 +880,14 @@ public class imbot {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	
+	/**
+	 * Shorthand for {@link #captureScreen(Rectangle)} and
+	 * {@link #saveImage(BufferedImage, String, String)}
+	 */
+	public static boolean saveCapture (Rectangle zone, String path, String name) {
+		return saveImage(captureScreen(zone), path, name);
 	}
 	
 	/**
