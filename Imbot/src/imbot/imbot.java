@@ -81,9 +81,9 @@ public class imbot {
 				last_location.setLocation(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
 				exit_int = exit_on_interruption;
 			} catch (Exception e) {
-				System.out.println("Failed to init Imbot.");
+				System.err.println("Failed to init Imbot.");
 				e.printStackTrace();
-				System.exit(-1);
+				System.exit(1);
 			}
 		} else {
 			throw new AlreadyInitException();
