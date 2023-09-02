@@ -361,6 +361,41 @@ public class imbot {
 		realisticClick(location.x, location.y);
 	}
 	
+	/**
+	 * First moves the mouse to x and y with user-like mouse movement 
+	 * then double left clicks
+	 * @implNote Uses {@link #realisticMove(int, int)}
+	 */
+	public static void realisticDoubleClick (int x, int y) {
+		realisticMove(x, y);
+		doubleClick();
+	}
+	
+	/**
+	 * Same as {@link #realisticDoubleClick(int, int))} but with {@link Point}
+	 */
+	public static void realisticDoubleClick (Point location) {
+		realisticDoubleClick(location.x, location.y);
+	}
+	
+	/**
+	 * {@link #realisticDoubleClick(int, int))} multiple times with
+	 * ms milliseconds difference between every double click
+	 * @param ms	is advised to be higher than 500
+	 */
+	public static void realisticDoubleClick (Point location, int count, int ms) {
+		for (int i = 0; i < count; i++) {
+			realisticDoubleClick(location.x, location.y);
+			sleep(ms);
+		}
+	}
+	
+	/**
+	 * {@link #realisticDoubleClick(Point, int, int)} with ms equal to 600
+	 */
+	public static void realisticDoubleClick (Point location, int count) {
+		realisticDoubleClick(location, count, 600);
+	}
 	
 	/**
 	 * First moves the mouse to x and y with user-like mouse movement 
@@ -443,6 +478,38 @@ public class imbot {
 		robot.mousePress(LEFT_BUTTON);
 		robot.mouseRelease(LEFT_BUTTON);
 		safeExitIfInt();
+	}
+	
+	/**
+	 * {@link #doubleClick(int)} with ms equal to 200 
+	 */
+	public static void doubleClick () {
+		doubleClick(200);
+	}
+	
+	/**
+	 * Double left clicks at the current position of the mouse.
+	 * @param ms	milliseconds between the first and second click. There
+	 * is no standard time difference, but it shouldn't surpass 500 ms. 
+	 */
+	public static void doubleClick (int ms) {
+		safeExitIfInt();
+		robot.mousePress(LEFT_BUTTON);
+		robot.mouseRelease(LEFT_BUTTON);
+		sleep(ms);
+		robot.mousePress(LEFT_BUTTON);
+		robot.mouseRelease(LEFT_BUTTON);
+		safeExitIfInt();
+	}
+	
+	/**
+	 * First moves the mouse to x and y then double left clicks
+	 * @param x
+	 * @param y
+	 */
+	public static void doubleClick (int x, int y) {
+		move(x, y);
+		doubleClick();
 	}
 	
 	/**
@@ -677,6 +744,10 @@ public class imbot {
 	 */
 	public static void setExitIfInt (boolean exit_on_interruption) {
 		exit_int = exit_on_interruption;
+		
+		if (exit_int) {
+			last_location.setLocation(getLocation());
+		}
 	}
 	
 	/**
@@ -844,6 +915,19 @@ public class imbot {
 	}
 	
 	/**
+	 * @return	an Array containing the RGB values that the int value represents
+	 */
+	public static int [] toRGB (int value) {
+		int [] rgb = new int [3];
+		
+		for (int i = 0; i < 3; i++) {
+			rgb [2 -i] = (value >> (8 * i)) & 0xFF;
+		}
+		
+		return rgb;
+	}
+	
+	/**
 	 * @return A screenshot of the entire screen
 	 */
 	public static BufferedImage captureScreen () {
@@ -890,6 +974,7 @@ public class imbot {
 		return saveImage(captureScreen(zone), path, name);
 	}
 	
+	// TODO: FIX, not working with primitive types
 	/**
 	 * An easy alternative for the tedious System.out.println() with 
 	 * better support for Lists, Maps and arrays.
@@ -917,7 +1002,6 @@ public class imbot {
 			}
 			
 		} else if (any.getClass().isArray()) {
-			
 			Object [] array = (Object[]) any;
 			if (array.length == 0) {
 				System.out.println("Empty array");
