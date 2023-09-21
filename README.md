@@ -1,4 +1,6 @@
 # Imbot
+![Version 2 in progress](https://badgen.net/badge/STATUS/complete/green)
+
 <b>Im</b>proved Ro<b>bot</b> <br> <br>
 An improved interface, with tones of additional features, for the existing Java [Robot](https://docs.oracle.com/javase/7/docs/api/java/awt/Robot.html)
 
