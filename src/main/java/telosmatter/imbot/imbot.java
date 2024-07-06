@@ -1,4 +1,4 @@
-package imbot;
+package telosmatter.imbot;
 
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -26,13 +26,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import exceptions.AlreadyInitException;
-import exceptions.ImproperSizeException;
-import exceptions.OutOfScreenBoundsException;
+import telosmatter.imbot.exceptions.AlreadyInitException;
+import telosmatter.imbot.exceptions.ImproperSizeException;
+import telosmatter.imbot.exceptions.OutOfScreenBoundsException;
 
 /**
- * <p>A class that facilitates and adds features to the already existing {@link java.awt.Robot}.
- * <p>imbot is intentionally not capitalized (opposing to the class naming convention) to facilitate its use.
+ * <p>A class that facilitates and adds features
+ * to the already existing {@link java.awt.Robot}.
+ * <p>imbot is intentionally not capitalized (as opposed
+ * to the class naming convention) to facilitate its use.
  * <br>
  * <br>
  * <a href="https://github.com/telos-matter/Imbot"> Github link</a> 

@@ -1,6 +1,6 @@
-package example;
+package telosmatter.imbot.example;
 
-import imbot.imbot;
+import telosmatter.imbot.imbot;
 
 public class Main {
 

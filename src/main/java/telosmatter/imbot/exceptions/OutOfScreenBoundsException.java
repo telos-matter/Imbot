@@ -1,4 +1,4 @@
-package exceptions;
+package telosmatter.imbot.exceptions;
 
 public class OutOfScreenBoundsException extends RuntimeException {
 	
