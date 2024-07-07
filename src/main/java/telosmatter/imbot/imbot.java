@@ -4,10 +4,8 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.util.Random;
 
 ///**
@@ -23,7 +21,7 @@ import java.util.Random;
 public class imbot {
 
 	/**
-	 * The singleton robot instance that does the work.
+	 * The singleton robot instance that does all the work.
 	 */
 	private static final Robot robot; // TODO refactor to ROBOT
 	/**
@@ -53,7 +51,7 @@ public class imbot {
 	/**
 	 * All utilities related to the mouse
 	 */
-	public static class mouse {
+	public static class mouse { // TODO refactor to mse
 
 		private static final int LEFT_BUTTON = InputEvent.getMaskForButton(1);
 		private static final int RIGHT_BUTTON = InputEvent.getMaskForButton(3);
@@ -129,7 +127,11 @@ public class imbot {
 
 		/**
 		 * <p>Simulate user-like mouse movement to the passed x and y
-		 * trough <a href= "https://github.com/BenLand100">Benjamin J. Land</a>s' <a href= "https://ben.land/post/2021/04/25/windmouse-human-mouse-movement/">WindMouse algorithm</a>.
+		 * trough <a href= "https://github.com/BenLand100">Benjamin
+		 * J. Land</a>s'
+		 * <a href= "https://ben.land/post/2021/04/25/windmouse-human-mouse-movement/">
+		 *     WindMouse algorithm
+		 * </a>.
 		 * <p><strong>Authors' note:</strong>
 		 * <p>I personally don't like
 		 * using <i>external code</i> and <strong>especially</strong>
@@ -451,41 +453,45 @@ public class imbot {
 			return isWithin(point.x, point.y);
 		}
 
-		// TODO here on down
 		/**
-		 * Same as {@link #getColor(Point)} but with {@link Point}
-		 */
-		public static Color getColor (Point location) {
-			return getColor(location.x, location.y);
-		}
-
-		/**
-		 * @return	The {@link Color} of the pixel at the specified
+		 * @return the {@link Color} of the pixel at the specified
 		 * location on the screen
-		 * @throws OutOfScreenBoundsException if the passed
-		 * location is outside the screen
 		 */
-		public static Color getColor (int x, int y) {
-			if ((x >= 0) && (x < SCREEN_WIDTH) && (y >= 0) && (y < SCREEN_HEIGHT)) {
-				return robot.getPixelColor(x, y);
-			} else {
-				throw new OutOfScreenBoundsException(x, y);
-			}
+		public static Color color(int x, int y) {
+			return robot.getPixelColor(x, y);
 		}
 
 		/**
-		 * @param location	of the pixel on the screen
-		 * @param color	to check against
-		 * @param dc	(delta color) difference in color
-		 * @return	True if the color difference (by euclidean distance) is
-		 * less than or equal to , False otherwise.
+		 * @see #color(int, int)
 		 */
-		public static boolean isColor (Point location, Color color, double dc) {
-			Color screen_color = getColor(location);
+		public static Color color(Point point) {
+			return color(point.x, point.y);
+		}
 
-			return Math.sqrt(Math.pow(color.getRed() -screen_color.getRed(), 2)
-						 +Math.pow(color.getGreen() -screen_color.getGreen(), 2)
-						 +Math.pow(color.getBlue() -screen_color.getBlue(), 2)) <= dc;
+		/**
+		 * Is the color of the pixel at <code>x</code>
+		 * and <code>y</code>
+		 * similar to this one?
+		 * @param color to check against
+		 * @param tolerance	how similar? A value between 0 and 1
+		 *                  0 -> must be exact
+		 *                  1 -> any color matches
+		 */
+		public static boolean isColor (int x, int y, Color color, float tolerance) {
+			// TODO new version with tolerance
+			return false;
+//			Color screen_color = color(location);
+//
+//			return Math.sqrt(Math.pow(color.getRed() -screen_color.getRed(), 2)
+//						 +Math.pow(color.getGreen() -screen_color.getGreen(), 2)
+//						 +Math.pow(color.getBlue() -screen_color.getBlue(), 2)) <= dc;
+		}
+
+		/**
+		 * @see #isColor(int, int, Color, float)
+		 */
+		public static boolean isColor(Point point, Color color, float tolerance) {
+			return isColor(point.x, point.y, color, tolerance);
 		}
 	}
 
