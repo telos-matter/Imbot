@@ -8,6 +8,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.util.Random;
 
 ///**
 // * <p>A class that facilitates and adds features
@@ -25,6 +26,10 @@ public class imbot {
 	 * The singleton robot instance that does the work.
 	 */
 	private static final Robot robot; // TODO refactor to ROBOT
+	/**
+	 * Whenever randomness is needed, we get it from here
+	 */
+	private static final Random RAND; // TODO add a setter for seed
 
 	static {
 		try {
@@ -36,6 +41,8 @@ public class imbot {
 		robot.setAutoDelay(0);
 		robot.setAutoWaitForIdle(true);
 		robot.mouseMove(scr.MIDDLE.x, scr.MIDDLE.y);
+
+		RAND = new Random();
 	}
 
 
@@ -134,7 +141,7 @@ public class imbot {
 		private static void realisticMove (int x, int y) {
 			final double sqrt_3 = Math.sqrt(3);
 			final double sqrt_5 = Math.sqrt(5);
-			final double speed = (Math.random()*15 +15)/5;
+			final double speed = (RAND.nextDouble()*15 +15)/5;
 			final double gravity = 9;
 			final double min_wait = 5/speed;
 			final double max_wait = 10/speed;
@@ -151,14 +158,14 @@ public class imbot {
 				wind = Math.min(wind, dist);
 
 				if (dist >= targetArea) {
-					wind_x = wind_x/sqrt_3 + (2*Math.random() -1)*wind/sqrt_5;
-					wind_y = wind_y/sqrt_3 + (2*Math.random() -1)*wind/sqrt_5;
+					wind_x = wind_x/sqrt_3 + (2*RAND.nextDouble() -1)*wind/sqrt_5;
+					wind_y = wind_y/sqrt_3 + (2*RAND.nextDouble() -1)*wind/sqrt_5;
 				} else {
 					wind_x /= sqrt_3;
 					wind_y /= sqrt_3;
 
 					if (max_step < 3) {
-						max_step = Math.random()*3 +3;
+						max_step = RAND.nextDouble()*3 +3;
 					} else {
 						max_step /= sqrt_5;
 					}
@@ -169,7 +176,7 @@ public class imbot {
 
 				double velocity_m = Math.hypot(velocity_x, velocity_y);
 				if (velocity_m > max_step) {
-					double random_dist = max_step/2 +Math.random()*max_step/2D;
+					double random_dist = max_step/2 +RAND.nextDouble()*max_step/2D;
 					velocity_x = (velocity_x/velocity_m)*random_dist;
 					velocity_y = (velocity_y/velocity_m)*random_dist;
 				}
@@ -349,14 +356,14 @@ public class imbot {
 			int side = halfSide * 2;
 
 			// Get random duration within bounds, in nanoseconds
-			duration = (Math.random()*2*delta + (duration - delta)) * 1_000_000_000 ;
+			duration = (RAND.nextDouble()*2*delta + (duration - delta)) * 1_000_000_000 ;
 
 			// Hover until duration has elapsed
 			while (duration >= 0) {
 				long start = System.nanoTime();
 				// Get random x and y within square
-				int x = (int)(Math.random()*side + minX);
-				int y = (int)(Math.random()*side + minY);
+				int x = (int)(RAND.nextDouble()*side + minX);
+				int y = (int)(RAND.nextDouble()*side + minY);
 				// Move to x and y
 				move(x, y);
 				// Subtract however long this took
@@ -565,7 +572,7 @@ public class imbot {
 		 * s -delta and s +delta
 		 */
 		public static void sleepRandom (double s, double delta) {
-			sleeps(Math.random()*2*delta +(s -delta));
+			sleeps(RAND.nextDouble()*2*delta +(s -delta));
 		}
 	}
 
