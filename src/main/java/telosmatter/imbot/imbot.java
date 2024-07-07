@@ -6,6 +6,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.util.Random;
 
 ///**
@@ -493,6 +494,229 @@ public class imbot {
 		public static boolean isColor(Point point, Color color, float tolerance) {
 			return isColor(point.x, point.y, color, tolerance);
 		}
+
+		/**
+		 * @return a screenshot of the specified
+		 * zone on the screen. Does not include the cursor
+		 */
+		public static BufferedImage captureScreen (Rectangle zone) {
+			return robot.createScreenCapture(zone);
+		}
+
+		/**
+		 * @return a screenshot of the entire screen.
+		 * Does not include the cursor
+		 */
+		public static BufferedImage captureScreen () {
+			return captureScreen (SCREEN_RECTANGLE);
+		}
+	}
+
+	/**
+	 * All utilities related
+	 * to images and colors
+	 */
+	public static class img {
+		/**
+		 * @param path
+		 * @return {@link BufferedImage} representation of the image at the path
+		 */
+		public static BufferedImage loadImage (String path) {
+			try {
+				return ImageIO.read(new File (path));
+			} catch (IOException e) {
+				System.out.println("Unable to read image: " +path);
+				e.printStackTrace();
+				return null;
+			}
+		}
+
+		/**
+		 * Shorthand for {@link #loadImage(String)} and {@link #searchForImage(BufferedImage, double)}
+		 */
+		public static Point searchForImage (String path, double s) {
+			return searchForImage(loadImage(path), s);
+		}
+
+		/**
+		 * Searches for an image on the screen
+		 * for a set period of time.
+		 * Shorthand for {@link #searchForImage(BufferedImage, BufferedImage, int, double, double)}
+		 * and {@link #captureScreen()} with default values of 0 and 0 for dp and dc
+		 * @param image	to be searched for
+		 * @param s	amount of seconds to search for. Negative values
+		 * mean search forever
+		 * @return	Upper-left location of where the image is
+		 * located on the screen, or null if not found.
+		 */
+		public static Point searchForImage (BufferedImage image, double s) {
+			return searchForImage(image, SCREEN_RECTANGLE, 0, 0, s);
+		}
+
+		/**
+		 * Searches for an image for a set period of time. Uses
+		 * {@link #locateImage(BufferedImage, BufferedImage, int, double)}
+		 * @param s	amount of seconds to search for. Negative values
+		 * mean search forever
+		 * @return	Upper-left location of where the image is
+		 * located, or null if not found.
+		 */
+		public static Point searchForImage (BufferedImage image, Rectangle zone, int dp, double dc, double s) {
+			s = (s < 0)? Double.POSITIVE_INFINITY : s * 1000000000;
+
+			Point location;
+			long start;
+			do {
+				start = System.nanoTime();
+				location = locateImage(image, imbot.captureScreen(zone), dp, dc);
+				s -= System.nanoTime() -start;
+
+				if (location != null) {
+					break;
+				}
+			} while (s >= 0);
+
+			return location;
+		}
+
+		/**
+		 * Shorthand for {@link #loadImage(String)} and {@link #locateImage(BufferedImage)}
+		 */
+		public static Point locateImage (String path) {
+			return locateImage(loadImage(path));
+		}
+
+
+		/**
+		 * Shorthand for {@link #locateImage(BufferedImage, Rectangle, int, double)}
+		 * with the entire screen and default values of 0 and 0 for dp and dc.
+		 */
+		public static Point locateImage (BufferedImage image) {
+			return locateImage(image, SCREEN_RECTANGLE, 0, 0);
+		}
+
+		/**
+		 * Shorthand for {@link #locateImage(BufferedImage, BufferedImage, int, double)}
+		 * with the searched image being a screen capture of the specified zone
+		 */
+		public static Point locateImage (BufferedImage image, Rectangle zone, int dp, double dc) {
+			return locateImage(image, robot.createScreenCapture(zone), dp, dc);
+		}
+
+		/**
+		 * Locates an image within another
+		 * @param small	Image to look for
+		 * @param big	Image to look in for the small one
+		 * @param dp	delta_pixel: Threshold of the number of wrong pixel colors
+		 * @param dc	delta_color: Threshold of the difference in
+		 * colors. Calculated with euclidean distance
+		 * @return	A {@link Point} representing the upper-left location of where
+		 * the small image has been found in the big one, or null if found nothing
+		 * @implNote Only works with PNG type of images as that they have a
+		 * lossless compression.
+		 * @implNote Some screens or operating systems (such as MacOS), not sure which, do
+		 * NOT take physically accurate screenshot using their normal screenshot binding.
+		 * As they increase the actual physical resolution for better screenshot. This
+		 * won't work with locateImage as it uses the actual physical resolution of the screen.
+		 * Use {@link #captureScreen(Rectangle)} and {@link #saveImage(BufferedImage, String, String)}
+		 * instead to be certain when taking screenshots and saving them!
+		 */
+		public static Point locateImage (BufferedImage small, BufferedImage big, int dp, double dc) {
+			if (small.getWidth() > big.getWidth() || small.getHeight() > big.getHeight()) {
+				throw new ImproperSizeException();
+			}
+
+			int x_limit = big.getWidth() -small.getWidth() +1;
+			int y_limit = big.getHeight() -small.getHeight() +1;
+
+			for (int x = 0; x < x_limit; x++) {
+				for (int y = 0; y < y_limit; y++) {
+					if (isSubImage(small, big, x, y, dp,  dc)) {
+						return new Point (x, y);
+					}
+				}
+			}
+
+			return null;
+		}
+
+		/**
+		 * @implNote Helper method for {@link #locateImage(BufferedImage, BufferedImage, double, double)}
+		 */
+		private static boolean isSubImage (BufferedImage small, BufferedImage big, int start_x, int start_y, int dp, double dc) {
+			if (dc == 0) {
+				for (int x = 0; x < small.getWidth(); x++) {
+					for (int y = 0; y < small.getHeight(); y++) {
+						if (big.getRGB(start_x +x,  start_y +y) != small.getRGB(x, y)) {
+							if ((--dp) < 0) {
+								return false;
+							}
+						}
+					}
+				}
+
+				return true;
+			} else {
+				int rs, gs, bs, rb, gb, bb, s, b;
+				for (int x = 0; x < small.getWidth(); x++) {
+					for (int y = 0; y < small.getHeight(); y++) {
+						s = small.getRGB(x, y);
+						bs = s & 0xFF;
+						gs = (s >> 8) & 0xFF;
+						rs = (s >> 16) & 0xFF;
+						b = big.getRGB(start_x +x,  start_y +y);
+						bb = b & 0xFF;
+						gb = (b >> 8) & 0xFF;
+						rb = (b >> 16) & 0xFF;
+
+						if (Math.sqrt(Math.pow(rb -rs, 2) +Math.pow(gb -gs, 2) +Math.pow(bb -bs, 2)) > dc) {
+							if ((--dp) < 0) {
+								return false;
+							}
+						}
+					}
+				}
+
+				return true;
+			}
+		}
+
+		/**
+		 * @return	an Array containing the RGB values that the int value represents
+		 */
+		public static int [] toRGB (int value) {
+			int [] rgb = new int [3];
+
+			for (int i = 0; i < 3; i++) {
+				rgb [2 -i] = (value >> (8 * i)) & 0xFF;
+			}
+
+			return rgb;
+		}
+
+		/**
+		 * @param image	Image to save
+		 * @param path	Path of the folder in which to store the image. For example "/Users/telos_matter/Pictures"
+		 * @param name	Name under which to store the image
+		 * @return True if the image was stored successfully, False otherwise.
+		 */
+		public static boolean saveImage (BufferedImage image, String path, String name) {
+			try {
+				return ImageIO.write(image, "png", new File(path + File.separatorChar +name +".png"));
+			} catch (IOException e) {
+				System.out.println("Unable to save image under: " +path + File.separatorChar +name +".png");
+				e.printStackTrace();
+				return false;
+			}
+		}
+
+		/**
+		 * Shorthand for {@link #captureScreen(Rectangle)} and
+		 * {@link #saveImage(BufferedImage, String, String)}
+		 */
+		public static boolean saveCapture (Rectangle zone, String path, String name) {
+			return saveImage(captureScreen(zone), path, name);
+		}
 	}
 
 	/**
@@ -704,229 +928,6 @@ public class imbot {
 //				color.setText(String.format("0x%02X%02X%02X", pixel_clr.getRed(), pixel_clr.getGreen(), pixel_clr.getBlue()));
 //			});
 //		}
-//	}
-//	/**
-//	 * @param path
-//	 * @return {@link BufferedImage} representation of the image at the path
-//	 */
-//	public static BufferedImage loadImage (String path) {
-//		try {
-//			return ImageIO.read(new File (path));
-//		} catch (IOException e) {
-//			System.out.println("Unable to read image: " +path);
-//			e.printStackTrace();
-//			return null;
-//		}
-//	}
-//
-//	/**
-//	 * Shorthand for {@link #loadImage(String)} and {@link #searchForImage(BufferedImage, double)}
-//	 */
-//	public static Point searchForImage (String path, double s) {
-//		return searchForImage(loadImage(path), s);
-//	}
-//
-//	/**
-//	 * Searches for an image on the screen
-//	 * for a set period of time.
-//	 * Shorthand for {@link #searchForImage(BufferedImage, BufferedImage, int, double, double)}
-//	 * and {@link #captureScreen()} with default values of 0 and 0 for dp and dc
-//	 * @param image	to be searched for
-//	 * @param s	amount of seconds to search for. Negative values
-//	 * mean search forever
-//	 * @return	Upper-left location of where the image is
-//	 * located on the screen, or null if not found.
-//	 */
-//	public static Point searchForImage (BufferedImage image, double s) {
-//		return searchForImage(image, SCREEN_RECTANGLE, 0, 0, s);
-//	}
-//
-//	/**
-//	 * Searches for an image for a set period of time. Uses
-//	 * {@link #locateImage(BufferedImage, BufferedImage, int, double)}
-//	 * @param s	amount of seconds to search for. Negative values
-//	 * mean search forever
-//	 * @return	Upper-left location of where the image is
-//	 * located, or null if not found.
-//	 */
-//	public static Point searchForImage (BufferedImage image, Rectangle zone, int dp, double dc, double s) {
-//		s = (s < 0)? Double.POSITIVE_INFINITY : s * 1000000000;
-//
-//		Point location;
-//		long start;
-//		do {
-//			start = System.nanoTime();
-//			location = locateImage(image, imbot.captureScreen(zone), dp, dc);
-//			s -= System.nanoTime() -start;
-//
-//			if (location != null) {
-//				break;
-//			}
-//		} while (s >= 0);
-//
-//		return location;
-//	}
-//
-//	/**
-//	 * Shorthand for {@link #loadImage(String)} and {@link #locateImage(BufferedImage)}
-//	 */
-//	public static Point locateImage (String path) {
-//		return locateImage(loadImage(path));
-//	}
-//
-//
-//	/**
-//	 * Shorthand for {@link #locateImage(BufferedImage, Rectangle, int, double)}
-//	 * with the entire screen and default values of 0 and 0 for dp and dc.
-//	 */
-//	public static Point locateImage (BufferedImage image) {
-//		return locateImage(image, SCREEN_RECTANGLE, 0, 0);
-//	}
-//
-//	/**
-//	 * Shorthand for {@link #locateImage(BufferedImage, BufferedImage, int, double)}
-//	 * with the searched image being a screen capture of the specified zone
-//	 */
-//	public static Point locateImage (BufferedImage image, Rectangle zone, int dp, double dc) {
-//		return locateImage(image, robot.createScreenCapture(zone), dp, dc);
-//	}
-//
-//	/**
-//	 * Locates an image within another
-//	 * @param small	Image to look for
-//	 * @param big	Image to look in for the small one
-//	 * @param dp	delta_pixel: Threshold of the number of wrong pixel colors
-//	 * @param dc	delta_color: Threshold of the difference in
-//	 * colors. Calculated with euclidean distance
-//	 * @return	A {@link Point} representing the upper-left location of where
-//	 * the small image has been found in the big one, or null if found nothing
-//	 * @implNote Only works with PNG type of images as that they have a
-//	 * lossless compression.
-//	 * @implNote Some screens or operating systems (such as MacOS), not sure which, do
-//	 * NOT take physically accurate screenshot using their normal screenshot binding.
-//	 * As they increase the actual physical resolution for better screenshot. This
-//	 * won't work with locateImage as it uses the actual physical resolution of the screen.
-//	 * Use {@link #captureScreen(Rectangle)} and {@link #saveImage(BufferedImage, String, String)}
-//	 * instead to be certain when taking screenshots and saving them!
-//	 */
-//	public static Point locateImage (BufferedImage small, BufferedImage big, int dp, double dc) {
-//		if (small.getWidth() > big.getWidth() || small.getHeight() > big.getHeight()) {
-//			throw new ImproperSizeException();
-//		}
-//
-//		int x_limit = big.getWidth() -small.getWidth() +1;
-//		int y_limit = big.getHeight() -small.getHeight() +1;
-//
-//		for (int x = 0; x < x_limit; x++) {
-//			for (int y = 0; y < y_limit; y++) {
-//				if (isSubImage(small, big, x, y, dp,  dc)) {
-//					return new Point (x, y);
-//				}
-//			}
-//		}
-//
-//		return null;
-//	}
-//
-//	/**
-//	 * @implNote Helper method for {@link #locateImage(BufferedImage, BufferedImage, double, double)}
-//	 */
-//	private static boolean isSubImage (BufferedImage small, BufferedImage big, int start_x, int start_y, int dp, double dc) {
-//		if (dc == 0) {
-//			for (int x = 0; x < small.getWidth(); x++) {
-//				for (int y = 0; y < small.getHeight(); y++) {
-//					if (big.getRGB(start_x +x,  start_y +y) != small.getRGB(x, y)) {
-//						if ((--dp) < 0) {
-//							return false;
-//						}
-//					}
-//				}
-//			}
-//
-//			return true;
-//		} else {
-//			int rs, gs, bs, rb, gb, bb, s, b;
-//			for (int x = 0; x < small.getWidth(); x++) {
-//				for (int y = 0; y < small.getHeight(); y++) {
-//					s = small.getRGB(x, y);
-//					bs = s & 0xFF;
-//					gs = (s >> 8) & 0xFF;
-//					rs = (s >> 16) & 0xFF;
-//					b = big.getRGB(start_x +x,  start_y +y);
-//					bb = b & 0xFF;
-//					gb = (b >> 8) & 0xFF;
-//					rb = (b >> 16) & 0xFF;
-//
-//					if (Math.sqrt(Math.pow(rb -rs, 2) +Math.pow(gb -gs, 2) +Math.pow(bb -bs, 2)) > dc) {
-//						if ((--dp) < 0) {
-//							return false;
-//						}
-//					}
-//				}
-//			}
-//
-//			return true;
-//		}
-//	}
-//
-//	/**
-//	 * @return	an Array containing the RGB values that the int value represents
-//	 */
-//	public static int [] toRGB (int value) {
-//		int [] rgb = new int [3];
-//
-//		for (int i = 0; i < 3; i++) {
-//			rgb [2 -i] = (value >> (8 * i)) & 0xFF;
-//		}
-//
-//		return rgb;
-//	}
-//
-//	/**
-//	 * @return A screenshot of the entire screen
-//	 */
-//	public static BufferedImage captureScreen () {
-//		return captureScreen (SCREEN_RECTANGLE);
-//	}
-//
-//	/**
-//	 * @param starting_point
-//	 * @return A screenshot of the screen from the starting_point to bottom-right end
-//	 */
-//	public static BufferedImage captureScreen (Point starting_point) {
-//		return captureScreen(new Rectangle(starting_point.x, starting_point.y, SCREEN_WIDTH -starting_point.x, SCREEN_HEIGHT -starting_point.y));
-//	}
-//
-//	/**
-//	 * @param zone
-//	 * @return A screenshot of the specified zone on the screen
-//	 */
-//	public static BufferedImage captureScreen (Rectangle zone) {
-//		return robot.createScreenCapture(zone);
-//	}
-//
-//	/**
-//	 * @param image	Image to save
-//	 * @param path	Path of the folder in which to store the image. For example "/Users/telos_matter/Pictures"
-//	 * @param name	Name under which to store the image
-//	 * @return True if the image was stored successfully, False otherwise.
-//	 */
-//	public static boolean saveImage (BufferedImage image, String path, String name) {
-//		try {
-//			return ImageIO.write(image, "png", new File(path + File.separatorChar +name +".png"));
-//		} catch (IOException e) {
-//			System.out.println("Unable to save image under: " +path + File.separatorChar +name +".png");
-//			e.printStackTrace();
-//			return false;
-//		}
-//	}
-//
-//	/**
-//	 * Shorthand for {@link #captureScreen(Rectangle)} and
-//	 * {@link #saveImage(BufferedImage, String, String)}
-//	 */
-//	public static boolean saveCapture (Rectangle zone, String path, String name) {
-//		return saveImage(captureScreen(zone), path, name);
 //	}
 //
 //	// TODO: FIX, not working with primitive types
