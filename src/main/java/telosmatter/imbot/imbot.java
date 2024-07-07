@@ -573,12 +573,12 @@ public class imbot {
 		}
 
 		/**
-		 * TODO yet to check this one
 		 * Sleep a random amount of seconds between
-		 * s -delta and s +delta
+		 * secs -delta and secs +delta
 		 */
-		public static void sleepRandom (double s, double delta) {
-			sleeps(RAND.nextDouble()*2*delta +(s -delta));
+		public static void sleepsRandom(double secs, double delta) {
+			double amount = RAND.nextDouble()*2*delta + (secs - delta);
+			sleeps(amount);
 		}
 	}
 
