@@ -551,27 +551,13 @@ public class imbot {
 		}
 
 		/**
-		 * Searches for an image on the screen
-		 * for a set period of time.
-		 * Shorthand for {@link #searchForImage(BufferedImage, BufferedImage, int, double, double)}
-		 * and {@link #captureScreen()} with default values of 0 and 0 for dp and dc
-		 * @param image	to be searched for
-		 * @param s	amount of seconds to search for. Negative values
-		 * mean search forever
-		 * @return	Upper-left location of where the image is
-		 * located on the screen, or null if not found.
+		 * Continuously search for an image
+		 * on the entire screen for
+		 * a given duration.
+		 * @see #search(BufferedImage, Rectangle, boolean, double, float, float)
 		 */
-		public static Point search(BufferedImage image, double s) {
-			return search(image, SCREEN_RECTANGLE, 0, 0, s);
-		}
-
-
-		/**
-		 * Shorthand for {@link #locateImage(BufferedImage, BufferedImage, int, double)}
-		 * with the searched image being a screen capture of the specified zone
-		 */
-		public static Point locateImage (BufferedImage image, Rectangle zone, int dp, double dc) {
-			return locateImage(image, robot.createScreenCapture(zone), dp, dc);
+		public static Point search (BufferedImage image, double duration, float differenceThreshold, float colorTolerance) {
+			return search(image, SCREEN_RECTANGLE, false, duration, differenceThreshold, colorTolerance); // screenRelative does not matter
 		}
 	}
 
