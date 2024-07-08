@@ -1,5 +1,6 @@
 package telosmatter.imbot;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -7,6 +8,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Random;
 
 ///**
@@ -504,6 +507,72 @@ public class imbot {
 		public static BufferedImage captureScreen () {
 			return captureScreen (SCREEN_RECTANGLE);
 		}
+
+		/**
+		 * Continuously search for an <code>image</code>
+		 * on the specified <code>zone</code> of the screen
+		 * for the specified amount of time.
+		 * @param image the image to look for
+		 * @param zone the zone on the screen to look in. Must be of
+		 *                   equal or greater size compared to <code>image</code>
+		 * @param screenRelative whether the returned point is relative
+		 *                       to the screen, or relative to the
+		 *                       given <code>zone</code>
+		 * @param duration of search in seconds. 0 will search only once,
+		 *                meanwhile negative values mean search indefinitely
+		 * @param differenceThreshold see {@link img#locateSubImage(BufferedImage, BufferedImage, float, float)}
+		 * @param colorTolerance see {@link img#locateSubImage(BufferedImage, BufferedImage, float, float)}
+		 * @return a {@link Point} representing the upper-left corner of where
+		 * <code>image</code> has been found, relative to the screen
+		 * or relative to the given <code>zone</code>, depending
+		 * on <code>screenRelative</code>. Or <code>null</code> if
+		 * <code>image</code> was not found.
+		 * @see img#locateSubImage(BufferedImage, BufferedImage, float, float) 
+		 */
+		public static Point search (BufferedImage image, Rectangle zone, boolean screenRelative, double duration, float differenceThreshold, float colorTolerance) {
+			// Convert to nanoseconds or infinity
+			duration = (duration >= 0)? duration * 1_000_000_000 : Double.POSITIVE_INFINITY;
+
+			// Start looking for duration amount
+			Point location;
+			do {
+				long start = System.nanoTime();
+				location = img.locateSubImage(image, captureScreen(zone), differenceThreshold, colorTolerance);
+				duration -= (System.nanoTime() - start);
+
+			} while (location != null && duration >= 0);
+
+			// If the location should be screen relative, then adjust it
+			if (screenRelative && location != null) {
+				location.translate(zone.x, zone.y);
+			}
+
+			return location;
+		}
+
+		/**
+		 * Searches for an image on the screen
+		 * for a set period of time.
+		 * Shorthand for {@link #searchForImage(BufferedImage, BufferedImage, int, double, double)}
+		 * and {@link #captureScreen()} with default values of 0 and 0 for dp and dc
+		 * @param image	to be searched for
+		 * @param s	amount of seconds to search for. Negative values
+		 * mean search forever
+		 * @return	Upper-left location of where the image is
+		 * located on the screen, or null if not found.
+		 */
+		public static Point search(BufferedImage image, double s) {
+			return search(image, SCREEN_RECTANGLE, 0, 0, s);
+		}
+
+
+		/**
+		 * Shorthand for {@link #locateImage(BufferedImage, BufferedImage, int, double)}
+		 * with the searched image being a screen capture of the specified zone
+		 */
+		public static Point locateImage (BufferedImage image, Rectangle zone, int dp, double dc) {
+			return locateImage(image, robot.createScreenCapture(zone), dp, dc);
+		}
 	}
 
 	// TODO say this shit somewhere else:
@@ -641,70 +710,10 @@ public class imbot {
 		}
 
 
-		/**
-		 * Searches for an image on the screen
-		 * for a set period of time.
-		 * Shorthand for {@link #searchForImage(BufferedImage, BufferedImage, int, double, double)}
-		 * and {@link #captureScreen()} with default values of 0 and 0 for dp and dc
-		 * @param image	to be searched for
-		 * @param s	amount of seconds to search for. Negative values
-		 * mean search forever
-		 * @return	Upper-left location of where the image is
-		 * located on the screen, or null if not found.
-		 */
-		public static Point searchForImage (BufferedImage image, double s) {
-			return searchForImage(image, SCREEN_RECTANGLE, 0, 0, s);
-		}
-
-		/**
-		 * Searches for an image for a set period of time. Uses
-		 * {@link #locateImage(BufferedImage, BufferedImage, int, double)}
-		 * @param s	amount of seconds to search for. Negative values
-		 * mean search forever
-		 * @return	Upper-left location of where the image is
-		 * located, or null if not found.
-		 */
-		public static Point searchForImage (BufferedImage image, Rectangle zone, int dp, double dc, double s) {
-			s = (s < 0)? Double.POSITIVE_INFINITY : s * 1000000000;
-
-			Point location;
-			long start;
-			do {
-				start = System.nanoTime();
-				location = locateImage(image, imbot.captureScreen(zone), dp, dc);
-				s -= System.nanoTime() -start;
-
-				if (location != null) {
-					break;
-				}
-			} while (s >= 0);
-
-			return location;
-		}
-
-		/**
-		 * Shorthand for {@link #loadImage(String)} and {@link #locateImage(BufferedImage)}
-		 */
-		public static Point locateImage (String path) {
-			return locateImage(loadImage(path));
-		}
 
 
-		/**
-		 * Shorthand for {@link #locateImage(BufferedImage, Rectangle, int, double)}
-		 * with the entire screen and default values of 0 and 0 for dp and dc.
-		 */
-		public static Point locateImage (BufferedImage image) {
-			return locateImage(image, SCREEN_RECTANGLE, 0, 0);
-		}
 
-		/**
-		 * Shorthand for {@link #locateImage(BufferedImage, BufferedImage, int, double)}
-		 * with the searched image being a screen capture of the specified zone
-		 */
-		public static Point locateImage (BufferedImage image, Rectangle zone, int dp, double dc) {
-			return locateImage(image, robot.createScreenCapture(zone), dp, dc);
-		}
+
 
 
 
@@ -807,16 +816,15 @@ public class imbot {
 	 * to files
 	 */
 	public static class file {
+
 		/**
-		 * @param path
-		 * @return {@link BufferedImage} representation of the image at the path
+		 * @return the image at <code>path</code> or <code>null</code> if unable
+		 * to read it.
 		 */
-		public static BufferedImage loadImage (String path) {
+		public static BufferedImage readImage (String path) {
 			try {
-				return ImageIO.read(new File (path));
+				return ImageIO.read(new File(path));
 			} catch (IOException e) {
-				System.out.println("Unable to read image: " +path);
-				e.printStackTrace();
 				return null;
 			}
 		}
