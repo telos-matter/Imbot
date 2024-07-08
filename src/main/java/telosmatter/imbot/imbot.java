@@ -474,18 +474,12 @@ public class imbot {
 		 * and <code>y</code>
 		 * similar to this one?
 		 * @param color to check against
-		 * @param tolerance	how similar? A value between 0 and 1
+		 * @param tolerance	a percentage of how dissimilar can it be
 		 *                  0 -> must be exact
-		 *                  1 -> any color matches
+		 *                  100 -> any color matches
 		 */
 		public static boolean isColor (int x, int y, Color color, float tolerance) {
-			// TODO new version with tolerance
-			return false;
-//			Color screen_color = color(location);
-//
-//			return Math.sqrt(Math.pow(color.getRed() -screen_color.getRed(), 2)
-//						 +Math.pow(color.getGreen() -screen_color.getGreen(), 2)
-//						 +Math.pow(color.getBlue() -screen_color.getBlue(), 2)) <= dc;
+			return img.isColorSimilar(color(x, y), color, tolerance);
 		}
 
 		/**
@@ -512,31 +506,140 @@ public class imbot {
 		}
 	}
 
+	// TODO say this shit somewhere else:
+	/**
+	 * * @implNote Only works with PNG type of images as that they have a
+	 * 		 * lossless compression.
+	 * 		 * @implNote Some screens or operating systems (such as MacOS), not sure which, do
+	 * 		 * NOT take physically accurate screenshot using their normal screenshot binding.
+	 * 		 * As they increase the actual physical resolution for better screenshot. This
+	 * 		 * won't work with locateImage as it uses the actual physical resolution of the screen.
+	 * 		 * Use {@link #captureScreen(Rectangle)} and {@link #saveImage(BufferedImage, String, String)}
+	 * 		 * instead to be certain when taking screenshots and saving them!
+	 */
+
 	/**
 	 * All utilities related
 	 * to images and colors
 	 */
 	public static class img {
+
 		/**
-		 * @param path
-		 * @return {@link BufferedImage} representation of the image at the path
+		 * Are these two colors similar?
+		 * @param tolerance a percentage of how dissimilar they can be
+		 *                  0 -> must be the exact same color
+		 *                  100 -> any two colors are the same
 		 */
-		public static BufferedImage loadImage (String path) {
-			try {
-				return ImageIO.read(new File (path));
-			} catch (IOException e) {
-				System.out.println("Unable to read image: " +path);
-				e.printStackTrace();
-				return null;
-			}
+		public static boolean isColorSimilar (Color a, Color b, float tolerance) {
+			Exceptions.requirePercentage(tolerance);
+			// TODO new version with tolerance
+			return false;
+//			Color screen_color = color(location);
+//
+//			return Math.sqrt(Math.pow(color.getRed() -screen_color.getRed(), 2)
+//						 +Math.pow(color.getGreen() -screen_color.getGreen(), 2)
+//						 +Math.pow(color.getBlue() -screen_color.getBlue(), 2)) <= dc;
 		}
 
 		/**
-		 * Shorthand for {@link #loadImage(String)} and {@link #searchForImage(BufferedImage, double)}
+		 * Locates an image within another
+		 * @param subImage the image to look for
+		 * @param bigImage	the image to look in
+		 * @param differenceThreshold a percentage how many pixels can
+		 *                            be different and still
+		 *                            count as the same image.
+		 *                            - 0 -> all pixels must be the same
+		 *                            - 100 -> any subImage would match
+		 * @param colorTolerance a percentage of how different can two colors be and
+		 *                       still count as the same color, and not
+		 *                       count towards the difference threshold.
+		 *                       - 0 -> must be the exact color.
+		 *                       - 100 -> any color would match.
+		 * @return a {@link Point} representing the upper-left corner of where
+		 * the <code>subImage</code> has been found in the
+		 * <code>bigImage</code>, or <code>null</code> if
+		 * the <code>subImage</code> is not inside the <code>bigImage</code>
+		 *
+		 * @throws IllegalArgumentException if <code>subImage</code> is
+		 * bigger than <code>bigImage</code>
 		 */
-		public static Point searchForImage (String path, double s) {
-			return searchForImage(loadImage(path), s);
+		public static Point locateSubImage (BufferedImage subImage, BufferedImage bigImage, float differenceThreshold, float colorTolerance) {
+			if (subImage.getWidth() > bigImage.getWidth() || subImage.getHeight() > bigImage.getHeight()) {
+				throw new IllegalArgumentException("The subImage is bigger than the bigImage");
+			}
+			Exceptions.requirePercentage(differenceThreshold);
+			Exceptions.requirePercentage(colorTolerance);
+
+			// Get how far should we check
+			int maxX = bigImage.getWidth() - subImage.getWidth();
+			int maxY = bigImage.getHeight() - subImage.getHeight();
+
+			// Try and match subImage to bigImage at x and y
+			for (int x = 0; x <= maxX; x++) {
+				for (int y = 0; y <= maxY; y++) {
+					if (isSubImage(subImage, bigImage, x, y, differenceThreshold,  colorTolerance)) {
+						return new Point (x, y);
+					}
+				}
+			}
+
+			return null;
 		}
+
+		/**
+		 * Helper method for
+		 * {@link #locateSubImage(BufferedImage, BufferedImage, float, float)}.
+		 * Checks if <code>small</code> matches <code>big</code> at
+		 * <code>x</code> and <code>y</code>.
+		 */
+		private static boolean isSubImage (BufferedImage small, BufferedImage big, int startX, int startY, float differenceThreshold, float colorTolerance) {
+			// Convert differenceThreshold percentage to actual value
+			//					= (how many pixels are there)		   * (percentage)
+			differenceThreshold = (small.getWidth()*small.getHeight()) * (differenceThreshold/100);
+
+			// If there is no color tolerance, then do a simple pixel for pixel check
+			if (colorTolerance == 0) {
+				int bigRGB, smallRGB;
+				for (int x = 0; x < small.getWidth(); x++) {
+					for (int y = 0; y < small.getHeight(); y++) {
+						bigRGB = big.getRGB(startX + x, startY + y);
+						smallRGB = small.getRGB(x, y);
+						if (bigRGB != smallRGB) {
+							if ((--differenceThreshold) < 0) {
+								return false;
+							}
+						}
+					}
+				}
+
+			// Otherwise, compare pixels' similarity
+			} else {
+				// TODO, when u implement color thing
+				int rs, gs, bs, rb, gb, bb, s, b;
+				for (int x = 0; x < small.getWidth(); x++) {
+					for (int y = 0; y < small.getHeight(); y++) {
+						s = small.getRGB(x, y);
+						bs = s & 0xFF;
+						gs = (s >> 8) & 0xFF;
+						rs = (s >> 16) & 0xFF;
+						b = big.getRGB(startX +x,  startY +y);
+						bb = b & 0xFF;
+						gb = (b >> 8) & 0xFF;
+						rb = (b >> 16) & 0xFF;
+
+						if (Math.sqrt(Math.pow(rb -rs, 2) +Math.pow(gb -gs, 2) +Math.pow(bb -bs, 2)) > colorTolerance) {
+							if ((--differenceThreshold) < 0) {
+								return false;
+							}
+						}
+					}
+				}
+
+			}
+
+			return true;
+		}
+
 
 		/**
 		 * Searches for an image on the screen
@@ -603,83 +706,8 @@ public class imbot {
 			return locateImage(image, robot.createScreenCapture(zone), dp, dc);
 		}
 
-		/**
-		 * Locates an image within another
-		 * @param small	Image to look for
-		 * @param big	Image to look in for the small one
-		 * @param dp	delta_pixel: Threshold of the number of wrong pixel colors
-		 * @param dc	delta_color: Threshold of the difference in
-		 * colors. Calculated with euclidean distance
-		 * @return	A {@link Point} representing the upper-left location of where
-		 * the small image has been found in the big one, or null if found nothing
-		 * @implNote Only works with PNG type of images as that they have a
-		 * lossless compression.
-		 * @implNote Some screens or operating systems (such as MacOS), not sure which, do
-		 * NOT take physically accurate screenshot using their normal screenshot binding.
-		 * As they increase the actual physical resolution for better screenshot. This
-		 * won't work with locateImage as it uses the actual physical resolution of the screen.
-		 * Use {@link #captureScreen(Rectangle)} and {@link #saveImage(BufferedImage, String, String)}
-		 * instead to be certain when taking screenshots and saving them!
-		 */
-		public static Point locateImage (BufferedImage small, BufferedImage big, int dp, double dc) {
-			if (small.getWidth() > big.getWidth() || small.getHeight() > big.getHeight()) {
-				throw new ImproperSizeException();
-			}
 
-			int x_limit = big.getWidth() -small.getWidth() +1;
-			int y_limit = big.getHeight() -small.getHeight() +1;
 
-			for (int x = 0; x < x_limit; x++) {
-				for (int y = 0; y < y_limit; y++) {
-					if (isSubImage(small, big, x, y, dp,  dc)) {
-						return new Point (x, y);
-					}
-				}
-			}
-
-			return null;
-		}
-
-		/**
-		 * @implNote Helper method for {@link #locateImage(BufferedImage, BufferedImage, double, double)}
-		 */
-		private static boolean isSubImage (BufferedImage small, BufferedImage big, int start_x, int start_y, int dp, double dc) {
-			if (dc == 0) {
-				for (int x = 0; x < small.getWidth(); x++) {
-					for (int y = 0; y < small.getHeight(); y++) {
-						if (big.getRGB(start_x +x,  start_y +y) != small.getRGB(x, y)) {
-							if ((--dp) < 0) {
-								return false;
-							}
-						}
-					}
-				}
-
-				return true;
-			} else {
-				int rs, gs, bs, rb, gb, bb, s, b;
-				for (int x = 0; x < small.getWidth(); x++) {
-					for (int y = 0; y < small.getHeight(); y++) {
-						s = small.getRGB(x, y);
-						bs = s & 0xFF;
-						gs = (s >> 8) & 0xFF;
-						rs = (s >> 16) & 0xFF;
-						b = big.getRGB(start_x +x,  start_y +y);
-						bb = b & 0xFF;
-						gb = (b >> 8) & 0xFF;
-						rb = (b >> 16) & 0xFF;
-
-						if (Math.sqrt(Math.pow(rb -rs, 2) +Math.pow(gb -gs, 2) +Math.pow(bb -bs, 2)) > dc) {
-							if ((--dp) < 0) {
-								return false;
-							}
-						}
-					}
-				}
-
-				return true;
-			}
-		}
 
 		/**
 		 * @return	an Array containing the RGB values that the int value represents
@@ -774,6 +802,27 @@ public class imbot {
 	}
 
 	/**
+	 * All utilities related
+	 * to reading from and saving
+	 * to files
+	 */
+	public static class file {
+		/**
+		 * @param path
+		 * @return {@link BufferedImage} representation of the image at the path
+		 */
+		public static BufferedImage loadImage (String path) {
+			try {
+				return ImageIO.read(new File (path));
+			} catch (IOException e) {
+				System.out.println("Unable to read image: " +path);
+				e.printStackTrace();
+				return null;
+			}
+		}
+	}
+
+	/**
 	 * Other utilities that do
 	 * not fall in any of the above
 	 * categories
@@ -806,7 +855,22 @@ public class imbot {
 		}
 	}
 
+	/**
+	 * A utility class that
+	 * is used internally to
+	 * validate arguments.
+	 */
+	private static class Exceptions {
 
+		/**
+		 * Must be between 0 and 100
+		 */
+		public static void requirePercentage (double percentage) {
+			if (percentage < 0 || percentage > 100) {
+				throw new IllegalArgumentException("Percentages must be between 0 and 100, not %f".formatted(percentage));
+			}
+		}
+	}
 
 
 
