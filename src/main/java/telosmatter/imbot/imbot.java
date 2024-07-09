@@ -44,8 +44,6 @@ public class imbot {
 
 		BOT.setAutoDelay(0);
 		BOT.setAutoWaitForIdle(true);
-
-		setExitOnInterruption(true); // TODO remove
 	}
 
 	/**
@@ -907,7 +905,7 @@ public class imbot {
 		 * Whether we should actually exit if
 		 * the user is trying to interrupt or not
 		 */
-		private static volatile boolean exitOnInt;
+		private static volatile boolean exitOnInt = true;
 
 		/**
 		 * A volatile double that will hold
