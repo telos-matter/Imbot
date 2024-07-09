@@ -25,13 +25,21 @@ import java.util.stream.Collectors;
 public class imbot {
 
 	/**
-	 * The singleton robot instance that does all the work.
+	 * The thread that imbot is running on.
+	 * To be able to kill it if the user
+	 * is trying to interrupt.
 	 */
-	private static final Robot robot; // TODO refactor to ROBOT
+	private static final Thread IMBOT_THREAD = Thread.currentThread();
+
 	/**
 	 * Whenever randomness is needed, we get it from here
 	 */
-	private static Random RAND;
+	private static Random RAND = new Random();
+
+	/**
+	 * The singleton robot instance that does all the work.
+	 */
+	private static final Robot robot; // TODO refactor to BOT
 
 	static {
 		try {
@@ -40,17 +48,15 @@ public class imbot {
 			System.err.println("Unable to initialize Imbot.");
 			throw new RuntimeException(e);
 		}
-		robot.setAutoDelay(0);
-		robot.setAutoWaitForIdle(true);
-		robot.mouseMove(scr.MIDDLE.x, scr.MIDDLE.y);
 
-		RAND = new Random();
+		robot.setAutoDelay(1); // 1 ms never did any harm
+		robot.setAutoWaitForIdle(true);
+
+		System.out.println("Are we even called boi " +IMBOT_THREAD.threadId());
+		setExitOnInterruption(true); // TODO huh, have to do this to load?
 	}
 
-
-//	private static Point last_location = new Point (-1, -1);
-//	private static boolean exit_int = false;
-
+	// TODO maybe switch the classes to interfaces?
 
 	/**
 	 * All utilities related to the mouse
@@ -62,9 +68,9 @@ public class imbot {
 
 		/**
 		 * Should the movement be realistic (human like)
-		 * or robotic (linear movements).
+		 * or robotic (linear / instant movements).
 		 */
-		private static boolean realistic = true;
+		private static boolean realistic = false; // TODO return to true
 
 		/**
 		 * The time in milliseconds between the first and second click.
@@ -125,8 +131,9 @@ public class imbot {
 		 * called
 		 */
 		private static void robotMove (int x, int y) {
-			// TODO add the thread check here for interuption
+			// In this order
 			robot.mouseMove(x, y);
+			InterruptionHandler.setLastLocation(x, y);
 		}
 
 		/**
@@ -852,7 +859,9 @@ public class imbot {
 		public static void sleep (long ms) {
 			try {
 				Thread.sleep(ms);
-			} catch (InterruptedException ignored) {}
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		/**
@@ -869,6 +878,15 @@ public class imbot {
 		public static void sleepsRandom(double secs, double delta) {
 			double amount = RAND.nextDouble()*2*delta + (secs - delta);
 			sleeps(amount);
+		}
+
+		/**
+		 * @return whether the user is trying
+		 * to interrupt the program trough
+		 * mouse movements or not.
+		 */
+		public static boolean isUserInterrupting () {
+			return InterruptionHandler.isUserInterrupting();
 		}
 	}
 
@@ -890,12 +908,130 @@ public class imbot {
 	}
 
 	/**
+	 * Where the exit-on-interruption mechanism
+	 * and its components reside.
+	 */
+	private static class InterruptionHandler {
+
+		/**
+		 * Whether we should actually exit if
+		 * the user is trying to interrupt or not
+		 */
+		private static volatile boolean exitOnInt = true;
+
+		/**
+		 * A volatile double that will hold
+		 * two ints representing the x and y
+		 * of the last location moved to
+		 * by the program.
+		 */
+		private static volatile long lastLocation;
+
+		/**
+		 * Used when assigning the x and y in
+		 * lastLocation
+		 */
+		private static final long MAX_INT = 0x0000_0000_FFFF_FFFFL;
+
+		// Initialize
+		static {
+			// Initialize lastLocation with the current location
+			Point location = mse.location();
+			setLastLocation(location.x, location.y);
+
+			// Start the thread that will continuously check
+			// if the user is trying to interrupt
+			Thread thread = new Thread(() -> {
+				System.out.println("Loaded " +Thread.currentThread().threadId());
+				while (true) {
+					if (exitOnInt && isUserInterrupting()) {
+						exit();
+						break;
+					}
+				}
+			});
+
+			thread.start();
+		}
+
+		/**
+		 * Called by the mouse whenever it moves
+		 * to store its last location
+		 */
+		private static void setLastLocation (int x, int y) {
+			long l = x & MAX_INT;
+			l <<= 32;
+			l |= y & MAX_INT;
+
+			// x is stored in first 32 bits and y in the second 32 bits
+			lastLocation = l;
+		}
+
+		/**
+		 * What checks if the user is trying
+		 * to interrupt.
+		 * Please don't false trigger. (I'm begging the
+		 * method, not asking you to do something.)
+		 */
+		private static boolean isUserInterrupting() {
+			// Wait until it's no longer moving
+			robot.waitForIdle();
+
+			// Get the current location
+			Point currentLocation = mse.location();
+
+			// Unpack the last location
+			long l = lastLocation;
+			int x = (int) ((l >> 32) & MAX_INT);
+			int y = (int) (l & MAX_INT);
+
+			// Compare
+			return x != currentLocation.x || y != currentLocation.y;
+		}
+
+		/**
+		 * Called when the user has been
+		 * trying to interrupt and exitOnInt
+		 * is set to <code>true</code>.
+		 * Only called on the checking thread.
+		 */
+		private static void exit () {
+			System.out.println("Imbot was interrupted.");
+
+			// Do what Itachi did
+//			IMBOT_THREAD.interrupt(); // This does not work
+
+		}
+	}
+
+	/**
 	 * Set the randomness seed again.
-	 * The initial default seed value
-	 * that is used is random.
+	 * The initial by-default seed value
+	 * is random.
+	 * @param seed the new seed or <code>null</code>
+	 *             for a new random seed
 	 */
 	public static void setSeed (Long seed) {
 		RAND = (seed == null)? new Random() : new Random(seed);
+	}
+
+	/**
+	 * Whether <code>imbot</code> should kill its Thread
+	 * if the user is trying to interrupt it trough
+	 * mouse movements.
+	 * If this false triggers when there is rapid
+	 * movements please do contact me.
+	 */
+	public static void setExitOnInterruption (boolean value) {
+		InterruptionHandler.exitOnInt = value;
+	}
+
+	/**
+	 * Is ExitOnInterruption on or off?
+	 * @see #setExitOnInterruption(boolean)
+	 */
+	public static boolean isExitOnInterruption () {
+		return InterruptionHandler.exitOnInt;
 	}
 
 
