@@ -372,7 +372,12 @@ public class imbot {
 			}
 		}
 
-
+		/**
+		 * Goes to the center of the screen
+		 */
+		public static void goToCenter () {
+			move(scr.CENTER);
+		}
 	}
 
 	/**
