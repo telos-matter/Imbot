@@ -25,13 +25,6 @@ import java.util.stream.Collectors;
 public class imbot {
 
 	/**
-	 * The thread that imbot is running on.
-	 * To be able to kill it if the user
-	 * is trying to interrupt.
-	 */
-	private static final Thread IMBOT_THREAD = Thread.currentThread();
-
-	/**
 	 * Whenever randomness is needed, we get it from here
 	 */
 	private static Random RAND = new Random();
@@ -49,11 +42,10 @@ public class imbot {
 			throw new RuntimeException(e);
 		}
 
-		robot.setAutoDelay(1); // 1 ms never did any harm
+		robot.setAutoDelay(0);
 		robot.setAutoWaitForIdle(true);
 
-		System.out.println("Are we even called boi " +IMBOT_THREAD.threadId());
-		setExitOnInterruption(true); // TODO huh, have to do this to load?
+		setExitOnInterruption(true); // TODO remove
 	}
 
 	// TODO maybe switch the classes to interfaces?
@@ -127,7 +119,7 @@ public class imbot {
 
 		/**
 		 * The only place where
-		 * robotMouseMove is actually
+		 * robot.mouseMove is actually
 		 * called
 		 */
 		private static void robotMove (int x, int y) {
@@ -917,13 +909,15 @@ public class imbot {
 		 * Whether we should actually exit if
 		 * the user is trying to interrupt or not
 		 */
-		private static volatile boolean exitOnInt = true;
+		private static volatile boolean exitOnInt;
 
 		/**
 		 * A volatile double that will hold
 		 * two ints representing the x and y
 		 * of the last location moved to
 		 * by the program.
+		 * It's like so, so that the reads
+		 * and writes are atomic.
 		 */
 		private static volatile long lastLocation;
 
@@ -942,7 +936,6 @@ public class imbot {
 			// Start the thread that will continuously check
 			// if the user is trying to interrupt
 			Thread thread = new Thread(() -> {
-				System.out.println("Loaded " +Thread.currentThread().threadId());
 				while (true) {
 					if (exitOnInt && isUserInterrupting()) {
 						exit();
@@ -999,8 +992,7 @@ public class imbot {
 			System.out.println("Imbot was interrupted.");
 
 			// Do what Itachi did
-//			IMBOT_THREAD.interrupt(); // This does not work
-
+			System.exit(0);
 		}
 	}
 
@@ -1016,7 +1008,8 @@ public class imbot {
 	}
 
 	/**
-	 * Whether <code>imbot</code> should kill its Thread
+	 * Whether <code>imbot</code> should exit, trough
+	 * {@link System#exit(int)},
 	 * if the user is trying to interrupt it trough
 	 * mouse movements.
 	 * If this false triggers when there is rapid
