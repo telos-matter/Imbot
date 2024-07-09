@@ -55,7 +55,7 @@ public class imbot {
 	/**
 	 * All utilities related to the mouse
 	 */
-	public static class mouse { // TODO refactor to mse
+	public static class mse {
 
 		private static final int LEFT_BUTTON = InputEvent.getMaskForButton(1);
 		private static final int RIGHT_BUTTON = InputEvent.getMaskForButton(3);
