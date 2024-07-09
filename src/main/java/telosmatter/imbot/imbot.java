@@ -526,8 +526,18 @@ public class imbot {
 		 * <code>image</code> has been found, relative to the screen
 		 * or relative to the given <code>zone</code>, depending
 		 * on <code>screenRelative</code>. Or <code>null</code> if
-		 * <code>image</code> was not found.
-		 * @see img#locateSubImage(BufferedImage, BufferedImage, float, float) 
+		 * <p>Know that</p>
+		 * @see img#locateSubImage(BufferedImage, BufferedImage, float, float)
+		 * @Note Know that some screens have a different number of physical pixels
+		 * than the number of "displayed pixels". Taking a normal screenshot
+		 * would usually use the "displayed pixels". This taken screenshot would not
+		 * work with this method as that the screen captures taken
+		 * by {@link #captureScreen(Rectangle)} use the physical pixels. To never
+		 * encounter this problem; save your screenshots using
+		 * {@link #captureScreen(Rectangle)} and {@link file#saveImage(BufferedImage, String, String)}
+		 * and then use that image if you want to locate something. Searching
+		 * could also sometimes fail because the format under which you saved the image
+		 * is lossy.
 		 */
 		public static Point search (BufferedImage image, Rectangle zone, boolean screenRelative, double duration, float differenceThreshold, float colorTolerance) {
 			// Convert to nanoseconds or infinity
@@ -560,18 +570,6 @@ public class imbot {
 			return search(image, SCREEN_RECTANGLE, false, duration, differenceThreshold, colorTolerance); // screenRelative does not matter
 		}
 	}
-
-	// TODO say this shit somewhere else:
-	/**
-	 * * @implNote Only works with PNG type of images as that they have a
-	 * 		 * lossless compression.
-	 * 		 * @implNote Some screens or operating systems (such as MacOS), not sure which, do
-	 * 		 * NOT take physically accurate screenshot using their normal screenshot binding.
-	 * 		 * As they increase the actual physical resolution for better screenshot. This
-	 * 		 * won't work with locateImage as it uses the actual physical resolution of the screen.
-	 * 		 * Use {@link #captureScreen(Rectangle)} and {@link #saveImage(BufferedImage, String, String)}
-	 * 		 * instead to be certain when taking screenshots and saving them!
-	 */
 
 	/**
 	 * All utilities related
