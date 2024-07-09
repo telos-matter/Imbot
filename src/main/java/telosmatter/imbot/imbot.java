@@ -31,13 +31,13 @@ public class imbot {
 	/**
 	 * Whenever randomness is needed, we get it from here
 	 */
-	private static final Random RAND; // TODO add a setter for seed
+	private static Random RAND;
 
 	static {
 		try {
 			robot = new Robot(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice());
 		} catch (AWTException e) {
-			System.err.println("Unable to initialize imbot.");
+			System.err.println("Unable to initialize Imbot.");
 			throw new RuntimeException(e);
 		}
 		robot.setAutoDelay(0);
@@ -889,7 +889,14 @@ public class imbot {
 		}
 	}
 
-
+	/**
+	 * Set the randomness seed again.
+	 * The initial default seed value
+	 * that is used is random.
+	 */
+	public static void setSeed (Long seed) {
+		RAND = (seed == null)? new Random() : new Random(seed);
+	}
 
 
 // TODO keep this one
