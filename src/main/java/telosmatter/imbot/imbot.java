@@ -58,7 +58,7 @@ public class imbot {
 		 * Should the movement be realistic (human like)
 		 * or robotic (linear / instant movements).
 		 */
-		private static boolean realistic = false; // TODO return to true
+		private static boolean realistic = true;
 
 		/**
 		 * The time in milliseconds between the first and second click.
