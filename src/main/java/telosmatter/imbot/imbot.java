@@ -371,6 +371,8 @@ public class imbot {
 				duration -= System.nanoTime() - start; // duration -= (end - start)
 			}
 		}
+
+
 	}
 
 	/**
@@ -426,10 +428,10 @@ public class imbot {
 		 */
 		public static final int HEIGHT = Toolkit.getDefaultToolkit().getScreenSize().height;
 		/**
-		 * The middle of your screen.
+		 * The center of your screen.
 		 * READ-ONLY, do not edit.
 		 */
-		public static final Point MIDDLE = new Point(WIDTH/2, HEIGHT/2);
+		public static final Point CENTER = new Point(WIDTH/2, HEIGHT/2);
 		/**
 		 * Your screen as a rectangle.
 		 * READ-ONLY, do not edit.
