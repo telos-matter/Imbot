@@ -48,8 +48,6 @@ public class imbot {
 		setExitOnInterruption(true); // TODO remove
 	}
 
-	// TODO maybe switch the classes to interfaces?
-
 	/**
 	 * All utilities related to the mouse
 	 */
