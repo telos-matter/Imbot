@@ -8,9 +8,9 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 ///**
 // * <p>A class that facilitates and adds features
@@ -695,51 +695,17 @@ public class imbot {
 			return true;
 		}
 
-
-
-
-
-
-
-
-
-
 		/**
-		 * @return	an Array containing the RGB values that the int value represents
+		 * @return an array containing the RGB values that the int value represents
 		 */
-		public static int [] toRGB (int value) {
+		public static int [] toRGBArray (int value) {
 			int [] rgb = new int [3];
-
-			for (int i = 0; i < 3; i++) {
-				rgb [2 -i] = (value >> (8 * i)) & 0xFF;
-			}
-
+			rgb[0] = (value >> (16)) & 0xFF; // Red
+			rgb[1] = (value >>  (8)) & 0xFF; // Green
+			rgb[2] = (value >>  (0)) & 0xFF; // Blue
 			return rgb;
 		}
 
-		/**
-		 * @param image	Image to save
-		 * @param path	Path of the folder in which to store the image. For example "/Users/telos_matter/Pictures"
-		 * @param name	Name under which to store the image
-		 * @return True if the image was stored successfully, False otherwise.
-		 */
-		public static boolean saveImage (BufferedImage image, String path, String name) {
-			try {
-				return ImageIO.write(image, "png", new File(path + File.separatorChar +name +".png"));
-			} catch (IOException e) {
-				System.out.println("Unable to save image under: " +path + File.separatorChar +name +".png");
-				e.printStackTrace();
-				return false;
-			}
-		}
-
-		/**
-		 * Shorthand for {@link #captureScreen(Rectangle)} and
-		 * {@link #saveImage(BufferedImage, String, String)}
-		 */
-		public static boolean saveCapture (Rectangle zone, String path, String name) {
-			return saveImage(captureScreen(zone), path, name);
-		}
 	}
 
 	/**
@@ -812,6 +778,65 @@ public class imbot {
 				return ImageIO.read(new File(path));
 			} catch (IOException e) {
 				return null;
+			}
+		}
+
+		/**
+		 * Saves the given image as a PNG under the given path + name
+		 * @param image	image to save
+		 * @param folderPath path of the folder in which to store the image. For example `/Users/telos_matter/Pictures`
+		 * @param name name under which to store the image. For example `dog_picture`
+		 * @return <code>true</code> if the image was saved successfully,
+		 * <code>false</code> otherwise.
+		 */
+		public static boolean saveImage (BufferedImage image, String folderPath, String name) {
+			try {
+				return ImageIO.write(image, "png", new File(folderPath +File.separatorChar +name +".png"));
+			} catch (IOException e) {
+				return false;
+			}
+		}
+
+		/**
+		 * Read the content the entire content of
+		 * the file at <code>path</code>.
+		 * @return the content or <code>null</code>
+		 * if it was unable to read it.
+		 */
+		public static String read (String path) {
+			try {
+				FileReader fileReader = new FileReader(new File(path));
+				BufferedReader bufferedReader = new BufferedReader(fileReader);
+				String content = bufferedReader.
+						lines().
+						collect(Collectors.joining());
+
+				bufferedReader.close();
+				fileReader.close();
+
+				return content;
+			} catch (IOException e) {
+				return null;
+			}
+		}
+
+		/**
+		 * Either appends the given <code>content</code>
+		 * to the given file at <code>path</code>, or
+		 * override it.
+		 * @return <code>true</code> if all went well,
+		 * <code>false</code> otherwise.
+		 */
+		public static boolean write (String path, String content, boolean append) {
+			try {
+				FileWriter fileWriter = new FileWriter(new File(path), append);
+				fileWriter.write(content);
+				fileWriter.flush();
+				fileWriter.close();
+				return true;
+
+			} catch (IOException e) {
+				return false;
 			}
 		}
 	}
@@ -988,47 +1013,6 @@ public class imbot {
 //		}
 //	}
 //
-//	// TODO: FIX, not working with primitive types
-//	/**
-//	 * An easy alternative for the tedious System.out.println() with
-//	 * better support for Lists, Maps and arrays.
-//	 */
-//	public static void out (Object any) {
-//		if (any == null) {
-//			System.out.println("Null");
-//		} else if (any instanceof Iterable <?>) {
-//
-//			Iterator <?> iter = ((Iterable <?>) any).iterator();
-//			int i;
-//			for (i = 0; iter.hasNext(); i++) {
-//				System.out.println(i +": " +iter.next());
-//			}
-//			if (i == 0) {
-//				System.out.println("Empty");
-//			}
-//
-//		} else if (any instanceof Map <?, ?>) {
-//
-//			if (((Map <?, ?>) any).isEmpty()) {
-//				System.out.println("Empty map");
-//			} else {
-//				((Map <?, ?>) any).forEach((Object key, Object value) -> {System.out.println(key +" -> " +value);});
-//			}
-//
-//		} else if (any.getClass().isArray()) {
-//			Object [] array = (Object[]) any;
-//			if (array.length == 0) {
-//				System.out.println("Empty array");
-//			} else {
-//				for (int i = 0; i < array.length; i++) {
-//					System.out.println(i +": " +array[i]);
-//				}
-//			}
-//
-//		} else {
-//			System.out.println(any.toString());
-//		}
-//	}
 //
 //	/**
 //	 * Utility function to keep the computer from sleeping
