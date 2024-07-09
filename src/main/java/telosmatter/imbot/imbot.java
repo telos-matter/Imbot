@@ -1006,7 +1006,7 @@ public class imbot {
 	 * @param seed the new seed or <code>null</code>
 	 *             for a new random seed
 	 */
-	public static void setSeed (Long seed) {
+	public static void setRandomnessSeed (Long seed) {
 		RAND = (seed == null)? new Random() : new Random(seed);
 	}
 
