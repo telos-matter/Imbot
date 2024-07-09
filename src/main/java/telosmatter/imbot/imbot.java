@@ -32,18 +32,18 @@ public class imbot {
 	/**
 	 * The singleton robot instance that does all the work.
 	 */
-	private static final Robot robot; // TODO refactor to BOT
+	private static final Robot BOT;
 
 	static {
 		try {
-			robot = new Robot(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice());
+			BOT = new Robot(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice());
 		} catch (AWTException e) {
 			System.err.println("Unable to initialize Imbot.");
 			throw new RuntimeException(e);
 		}
 
-		robot.setAutoDelay(0);
-		robot.setAutoWaitForIdle(true);
+		BOT.setAutoDelay(0);
+		BOT.setAutoWaitForIdle(true);
 
 		setExitOnInterruption(true); // TODO remove
 	}
@@ -124,7 +124,7 @@ public class imbot {
 		 */
 		private static void robotMove (int x, int y) {
 			// In this order
-			robot.mouseMove(x, y);
+			BOT.mouseMove(x, y);
 			InterruptionHandler.setLastLocation(x, y);
 		}
 
@@ -233,8 +233,8 @@ public class imbot {
 		 * Left click
 		 */
 		public static void click () {
-			robot.mousePress(LEFT_BUTTON);
-			robot.mouseRelease(LEFT_BUTTON);
+			BOT.mousePress(LEFT_BUTTON);
+			BOT.mouseRelease(LEFT_BUTTON);
 		}
 
 		/**
@@ -282,8 +282,8 @@ public class imbot {
 		 * Right click
 		 */
 		public static void rightClick() {
-			robot.mousePress(RIGHT_BUTTON);
-			robot.mouseRelease(RIGHT_BUTTON);
+			BOT.mousePress(RIGHT_BUTTON);
+			BOT.mouseRelease(RIGHT_BUTTON);
 		}
 
 		/**
@@ -306,9 +306,9 @@ public class imbot {
 		 */
 		public static void drag (int from_x, int from_y, int to_x, int to_y) {
 			move(from_x, from_y);
-			robot.mousePress(LEFT_BUTTON);
+			BOT.mousePress(LEFT_BUTTON);
 			move(to_x, to_y);
-			robot.mouseRelease(LEFT_BUTTON);
+			BOT.mouseRelease(LEFT_BUTTON);
 		}
 
 		/**
@@ -323,9 +323,9 @@ public class imbot {
 		 * to <code>x</code> and <code>y</code>
 		 */
 		public static void drag (int to_x, int to_y) {
-			robot.mousePress(LEFT_BUTTON);
+			BOT.mousePress(LEFT_BUTTON);
 			move(to_x,to_y);
-			robot.mouseRelease(LEFT_BUTTON);
+			BOT.mouseRelease(LEFT_BUTTON);
 		}
 
 		/**
@@ -387,7 +387,7 @@ public class imbot {
 		 * @param keyCode KeyCode of the key to press. (e.g. KeyEvent.VK_A)
 		 */
 		public static void press (int keyCode) {
-			robot.keyPress(keyCode);
+			BOT.keyPress(keyCode);
 		}
 
 		/**
@@ -395,7 +395,7 @@ public class imbot {
 		 * @param keyCode KeyCode of the key to release. (e.g. KeyEvent.VK_A)
 		 */
 		public static void release (int keyCode) {
-			robot.keyRelease(keyCode);
+			BOT.keyRelease(keyCode);
 		}
 
 		/**
@@ -403,8 +403,8 @@ public class imbot {
 		 */
 		public static void type (char c) {
 			int keyCode = KeyEvent.getExtendedKeyCodeForChar(c);
-			robot.keyPress(keyCode);
-			robot.keyRelease(keyCode);
+			BOT.keyPress(keyCode);
+			BOT.keyRelease(keyCode);
 		}
 
 		/**
@@ -461,7 +461,7 @@ public class imbot {
 		 * location on the screen
 		 */
 		public static Color color(int x, int y) {
-			return robot.getPixelColor(x, y);
+			return BOT.getPixelColor(x, y);
 		}
 
 		/**
@@ -496,7 +496,7 @@ public class imbot {
 		 * zone on the screen. Does not include the cursor
 		 */
 		public static BufferedImage captureScreen (Rectangle zone) {
-			return robot.createScreenCapture(zone);
+			return BOT.createScreenCapture(zone);
 		}
 
 		/**
@@ -968,7 +968,7 @@ public class imbot {
 		 */
 		private static boolean isUserInterrupting() {
 			// Wait until it's no longer moving
-			robot.waitForIdle();
+			BOT.waitForIdle();
 
 			// Get the current location
 			Point currentLocation = mse.location();
