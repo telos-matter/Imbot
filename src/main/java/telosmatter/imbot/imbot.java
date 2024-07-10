@@ -12,16 +12,19 @@ import java.io.*;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-///**
-// * <p>A class that facilitates and adds features
-// * to the already existing {@link java.awt.Robot}.
-// * <p>imbot is intentionally not capitalized (as opposed
-// * to the class naming convention) to facilitate its use.
-// * <br>
-// * <br>
-// * <a href="https://github.com/telos-matter/Imbot"> Github link</a>
-// * @author telos_matter
-// */
+/**
+ * <p>A class that facilitates and adds features
+ * to the already existing {@link java.awt.Robot}.</p>
+ * <p>Methods are regrouped in static classes
+ * each dedicated to a "category" of
+ * functionalities.</p>
+ * <p>The class <code>imbot</code>, and the "categories" inside,
+ * are intentionally not capitalized (as opposed
+ * to the class naming convention) to facilitate their use.</p>
+ * <br>
+ * <a href="https://github.com/telos-matter/Imbot"> Github link.</a>
+ * @author telos_matter
+ */
 public class imbot {
 
 	/**
@@ -552,9 +555,9 @@ public class imbot {
 		 * <code>image</code> has been found, relative to the screen
 		 * or relative to the given <code>zone</code>, depending
 		 * on <code>screenRelative</code>. Or <code>null</code> if
-		 * <p>Know that</p>
+		 * <code>image</code> was not found.
 		 * @see img#locateSubImage(BufferedImage, BufferedImage, float, float)
-		 * @Note Know that some screens have a different number of physical pixels
+		 * @note Know that some screens have a different number of physical pixels
 		 * than the number of "displayed pixels". Taking a normal screenshot
 		 * would usually use the "displayed pixels". This taken screenshot would not
 		 * work with this method as that the screen captures taken
@@ -1040,7 +1043,7 @@ public class imbot {
 	 * if the user is trying to interrupt it trough
 	 * mouse movements.
 	 * If this false triggers when there is rapid
-	 * movements please do contact me, or
+	 * movements please
 	 * increase {@link mse#COOLDOWN_DURATION} by
 	 * a couple ms.
 	 */
