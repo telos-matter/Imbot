@@ -711,44 +711,18 @@ public class imbot {
 			//					= (how many pixels are there)		   * (percentage)
 			differenceThreshold = (small.getWidth()*small.getHeight()) * (differenceThreshold/100);
 
-			// If there is no color tolerance, then do a simple pixel for pixel check
-			if (colorTolerance == 0) {
-				int bigRGB, smallRGB;
-				for (int x = 0; x < small.getWidth(); x++) {
-					for (int y = 0; y < small.getHeight(); y++) {
-						bigRGB = big.getRGB(startX + x, startY + y);
-						smallRGB = small.getRGB(x, y);
-						if (bigRGB != smallRGB) {
-							if ((--differenceThreshold) < 0) {
-								return false;
-							}
+			// Compare pixels
+			int smallRGB, bigRGB;
+			for (int x = 0; x < small.getWidth(); x++) {
+				for (int y = 0; y < small.getHeight(); y++) {
+					smallRGB = small.getRGB(x, y);
+					bigRGB = big.getRGB(startX + x, startY + y);
+					if (!isColorSimilar(smallRGB, bigRGB, colorTolerance)) {
+						if ((--differenceThreshold) < 0) {
+							return false;
 						}
 					}
 				}
-
-			// Otherwise, compare pixels' similarity
-			} else {
-				// TODO, when u implement color thing
-				int rs, gs, bs, rb, gb, bb, s, b;
-				for (int x = 0; x < small.getWidth(); x++) {
-					for (int y = 0; y < small.getHeight(); y++) {
-						s = small.getRGB(x, y);
-						bs = s & 0xFF;
-						gs = (s >> 8) & 0xFF;
-						rs = (s >> 16) & 0xFF;
-						b = big.getRGB(startX +x,  startY +y);
-						bb = b & 0xFF;
-						gb = (b >> 8) & 0xFF;
-						rb = (b >> 16) & 0xFF;
-
-						if (Math.sqrt(Math.pow(rb -rs, 2) +Math.pow(gb -gs, 2) +Math.pow(bb -bs, 2)) > colorTolerance) {
-							if ((--differenceThreshold) < 0) {
-								return false;
-							}
-						}
-					}
-				}
-
 			}
 
 			return true;
