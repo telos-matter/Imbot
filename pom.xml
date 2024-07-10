@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>Imbot</name>  
-    <description>An improved interface for Java Robot</description>
+    <description>An improved Java Robot</description>
     <url>https://github.com/telos-matter/Imbot</url>
     
     <properties>
