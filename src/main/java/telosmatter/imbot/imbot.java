@@ -738,7 +738,6 @@ public class imbot {
 			rgb[2] = (value >>  (0)) & 0xFF; // Blue
 			return rgb;
 		}
-
 	}
 
 	/**
@@ -1064,18 +1063,6 @@ public class imbot {
 	public static boolean isExitOnInterruption () {
 		return InterruptionHandler.exitOnInt;
 	}
-
-
-// TODO keep this one
-//
-//	/**
-//	 * @return True if the user has moved the mouse,
-//	 * False if not or if it moved but then returned to
-//	 * the exact last position (highly improbable..)
-//	 */
-//	public static boolean isUserControlling () {
-//		return !last_location.equals(getLocation());
-//	}
 
 	// TODO put these "programs" somewhere
 //	/**
