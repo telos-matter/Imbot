@@ -453,6 +453,7 @@ public class imbot {
 	 * All utilities related to the screen
 	 */
 	public static class scr {
+
 		/**
 		 * Your screen width
 		 */
