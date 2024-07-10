@@ -607,6 +607,44 @@ public class imbot {
 	public static class img {
 
 		/**
+		 * What {@link #isColorSimilar(Color, Color, float)} actually
+		 * uses. And other methods.
+		 * Uses 3D Euclidean distance.
+		 * @param tolerance a percentage between 0 and 100
+		 */
+		private static boolean isColorSimilar (int rgbA, int rgbB, double tolerance) {
+			// If there is no tolerance, then the colors must be exact
+			if (tolerance == 0) {
+				return rgbA == rgbB;
+			}
+
+			// Otherwise calculate distance, to do so
+			// - First unpack the components:
+			int rA, gA, bA;
+			rA = (rgbA >> 16) & 0xFF;
+			gA = (rgbA >> 8)  & 0xFF;
+			bA = (rgbA)       & 0xFF;
+			int rB, gB, bB;
+			rB = (rgbB >> 16) & 0xFF;
+			gB = (rgbB >> 8)  & 0xFF;
+			bB = (rgbB)       & 0xFF;
+
+			// - Then calculate the 3D distance between the components
+			int r, g, b;
+			r = (rA - rB); r *= r;
+			g = (gA - gB); g *= g;
+			b = (bA - bB); b *= b;
+			double dist = Math.sqrt(r + g + b);
+
+			// Now, normalize it:
+			final double MAX_DISTANCE = 255 * Math.sqrt(3);
+			dist /= MAX_DISTANCE;
+
+			// Finally compare
+			return (dist * 100) <= tolerance; // It's better to multiply than to divide
+		}
+
+		/**
 		 * Are these two colors similar?
 		 * @param tolerance a percentage of how dissimilar they can be
 		 *                  0 -> must be the exact same color
@@ -614,13 +652,7 @@ public class imbot {
 		 */
 		public static boolean isColorSimilar (Color a, Color b, float tolerance) {
 			Exceptions.requirePercentage(tolerance);
-			// TODO new version with tolerance
-			return false;
-//			Color screen_color = color(location);
-//
-//			return Math.sqrt(Math.pow(color.getRed() -screen_color.getRed(), 2)
-//						 +Math.pow(color.getGreen() -screen_color.getGreen(), 2)
-//						 +Math.pow(color.getBlue() -screen_color.getBlue(), 2)) <= dc;
+			return isColorSimilar(a.getRGB(), b.getRGB(), tolerance);
 		}
 
 		/**
