@@ -1,11 +1,13 @@
 package telosmatter.imbot;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -487,6 +489,7 @@ public class imbot {
 		}
 
 		/**
+		 * Get the color at that location
 		 * @return the {@link Color} of the pixel at the specified
 		 * location on the screen
 		 */
@@ -1099,121 +1102,133 @@ public class imbot {
 
 			while (true) {
 				util.sleeps(secs);
-				Point point = mse.location();
-				Color color = scr.color(point);
+				Point location = mse.location();
+				Color color = scr.color(location);
 				System.out.printf("(%d, %d) -> 0x%02X%02X%02X%n",
-						point.x, point.y,
+						location.x, location.y,
 						color.getRed(), color.getGreen(), color.getBlue());
 			}
 		}
 
 		/**
-		 * <p>Continuously report the location of the mouse on
-		 * the screen and the color at that location.
+		 * <p>Continuously report the location of the mouse
+		 * and the color of the pixel at that location
+		 * trough a GUI.</p>
 		 * <p>Useful when trying to hard code locations
-		 * of certain elements into a script.
-		 * <ul> Press / type (while the window is in focus):
-		 * <li><strong>space</strong>:	to copy the color into the clipboard</li>
-		 * <li><strong>l</strong> or <strong>L</strong>:	to copy the location into the clipboard</li>
-		 * <li><strong>enter</strong> or <strong>return</strong>:	to copy the location and the color into the clipboard</li>
-		 * <li><strong>q</strong> or <strong>Q</strong>:	to quit</li>
+		 * of certain elements into a script.</p>
+		 * <ul>Type (while the window is in focus):
+		 * <li><strong>&lt;space&gt;</strong>: to copy the color into the clipboard</li>
+		 * <li><strong>l</strong>: to copy the location into the clipboard</li>
+		 * <li><strong>&lt;enter&gt;</strong>: to copy the location and the color into the clipboard</li>
+		 * <li><strong>q</strong>: to quit</li>
 		 * </ul>
-		 * @implNote	The method never exits,
-		 * as it contains an infinite loop. It's not meant
-		 * to be used within a script
-		 * @implNote	A bug may be encountered where,
-		 * when leaving the mouse stationary for a while,
-		 * the color would start reading white. No certain
-		 * idea of why that's the case or how to fix it.
 		 */
 		public static void reportLocation () {
-			setExitIfInt(false);
+			setExitOnInterruption(false);
 
+			// Construct the JFrame
 			JFrame frame = new JFrame ("Imbot");
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			frame.setLocationRelativeTo(null);
-			frame.addKeyListener(new KeyAdapter () {
+			frame.setResizable(true);
+			// Add a keyListener for the keystrokes
+			frame.addKeyListener(new KeyAdapter() {
 				@Override
 				public void keyTyped(KeyEvent e) {
-					Point location = getLocation();
-					Color pixel_clr = getColor(location);
-					switch(e.getKeyChar()) {
-					case ' ':
-						copy(String.format("0x%02X%02X%02X", pixel_clr.getRed(), pixel_clr.getGreen(), pixel_clr.getBlue()));
-						break;
-					case 'l': case 'L':
-						copy(String.format("(%d,%d)",location.x, location.y));
-						break;
-					case '\n':
-						copy(String.format("(%d,%d) -> 0x%02X%02X%02X",location.x, location.y, pixel_clr.getRed(), pixel_clr.getGreen(), pixel_clr.getBlue()));
-						break;
-					case 'q': case 'Q':
-						frame.dispose(); System.exit(0);
-						break;
+					Point location = mse.location();
+					Color color = scr.color(location);
+
+					switch (e.getKeyChar()) {
+						case ' ' -> cb.copy(String.format("0x%02X%02X%02X",
+								color.getRed(), color.getGreen(), color.getBlue()));
+
+						case 'l', 'L' -> cb.copy(String.format("(%d, %d)",
+								location.x, location.y));
+
+						case '\n' -> cb.copy(String.format("(%d, %d) -> 0x%02X%02X%02X",
+								location.x, location.y,
+								color.getRed(), color.getGreen(), color.getBlue()));
+
+						case 'q', 'Q' -> {
+							frame.dispose();
+							System.exit(0);
+						}
 					}
 				}
 			});
 
+			// Populate the JFrame
 			JPanel panel = new JPanel ();
 			panel.setLayout(new GridLayout (3, 1));
 
-			JLabel x = new JLabel("x: 0000", SwingConstants.CENTER);
-			JLabel y = new JLabel("y: 0000", SwingConstants.CENTER);
-			JLabel color = new JLabel("0x000000", SwingConstants.CENTER);
+			JLabel xLabel = new JLabel("x: 0000", SwingConstants.CENTER);
+			JLabel yLabel = new JLabel("y: 0000", SwingConstants.CENTER);
+			JLabel colorLabel = new JLabel("0x000000", SwingConstants.CENTER);
 
-			panel.add(x);
-			panel.add(y);
-			panel.add(color);
+			panel.add(xLabel);
+			panel.add(yLabel);
+			panel.add(colorLabel);
 
 			frame.setContentPane(panel);
 			frame.setSize(150, 100);
 			frame.setVisible(true);
 
+			// Update the GUI
 			while (true) {
-				sleep(50);
+				util.sleep(50);
+
 				EventQueue.invokeLater(() -> {
-					Point location = getLocation();
-					Color pixel_clr = getColor(location);
+					Point location = mse.location();
+					Color color = scr.color(location);
 
-					panel.setBackground(pixel_clr);
+					// Set the background to the current color
+					panel.setBackground(color);
 
-					if ((0.2126 * pixel_clr.getRed() + 0.7152 * pixel_clr.getGreen() + 0.0722 * pixel_clr.getBlue()) < 100) {
-						x.setForeground(Color.WHITE);
-						y.setForeground(Color.WHITE);
-						color.setForeground(Color.WHITE);
+					// Check if the color is light or dark for text visibility
+					double luma = 0.2126*color.getRed() +
+							0.7152*color.getGreen() +
+							0.0722*color.getBlue();
+					// The color is dark, make the text color white
+					if (luma < 100) {
+						xLabel.setForeground(Color.WHITE);
+						yLabel.setForeground(Color.WHITE);
+						colorLabel.setForeground(Color.WHITE);
+					// The color is light, make the text color black
 					} else {
-						x.setForeground(Color.BLACK);
-						y.setForeground(Color.BLACK);
-						color.setForeground(Color.BLACK);
+						xLabel.setForeground(Color.BLACK);
+						yLabel.setForeground(Color.BLACK);
+						colorLabel.setForeground(Color.BLACK);
 					}
 
-					x.setText("x: " +location.x);
-					y.setText("y: " +location.y);
-					color.setText(String.format("0x%02X%02X%02X", pixel_clr.getRed(), pixel_clr.getGreen(), pixel_clr.getBlue()));
+					// Update the labels
+					xLabel.setText("x: " +location.x);
+					yLabel.setText("y: " +location.y);
+					colorLabel.setText(String.format("0x%02X%02X%02X",
+							color.getRed(), color.getGreen(), color.getBlue()));
 				});
 			}
 		}
 
 
-		/**
-		 * Utility function to keep the computer from sleeping
-		 * by periodically moving the mouse
-		 * @param initial_delay	Delay to sleep before starting is milliseconds
-		 */
-		public static void STAY_AWAKE (int initial_delay) {
-			sleep (initial_delay);
-			move(SCREEN_WIDTH/2 +50, SCREEN_HEIGHT/2 +50);
-			while (true) {
-				slide(0, -100);
-				sleep(2500);
-				slide(-100, 0);
-				sleep(2500);
-				slide(0, 100);
-				sleep(2500);
-				slide(100, 0);
-				sleep(2500);
-			}
-		}
+//		/**
+//		 * Utility function to keep the computer from sleeping
+//		 * by periodically moving the mouse
+//		 * @param initial_delay	Delay to sleep before starting is milliseconds
+//		 */
+//		public static void STAY_AWAKE (int initial_delay) {
+//			sleep (initial_delay);
+//			move(SCREEN_WIDTH/2 +50, SCREEN_HEIGHT/2 +50);
+//			while (true) {
+//				slide(0, -100);
+//				sleep(2500);
+//				slide(-100, 0);
+//				sleep(2500);
+//				slide(0, 100);
+//				sleep(2500);
+//				slide(100, 0);
+//				sleep(2500);
+//			}
+//		}
 	}
 
 }
