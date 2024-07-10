@@ -734,10 +734,29 @@ public class imbot {
 			//					= (how many pixels are there)		   * (percentage)
 			differenceThreshold = (small.getWidth()*small.getHeight()) * (differenceThreshold/100);
 
-			// TODO return it how it was, that s check u dont need to do million time
-
-			// Compare pixels
+			// Needed variables
 			int smallRGB, bigRGB;
+
+			// If there is no colorTolerance, then simply compare
+			// the pixels. No need to check a million time
+			// if there is no colorTolerance in isColorSimilar
+			if (colorTolerance == 0) {
+				for (int x = 0; x < small.getWidth(); x++) {
+					for (int y = 0; y < small.getHeight(); y++) {
+						smallRGB = small.getRGB(x, y);
+						bigRGB = big.getRGB(startX + x, startY + y);
+						if (smallRGB != bigRGB) {
+							if ((--differenceThreshold) < 0) {
+								return false;
+							}
+						}
+					}
+				}
+
+				return true;
+			}
+
+			// Otherwise, go through isColorSimilar, it's fine
 			for (int x = 0; x < small.getWidth(); x++) {
 				for (int y = 0; y < small.getHeight(); y++) {
 					smallRGB = small.getRGB(x, y);
