@@ -725,6 +725,8 @@ public class imbot {
 			//					= (how many pixels are there)		   * (percentage)
 			differenceThreshold = (small.getWidth()*small.getHeight()) * (differenceThreshold/100);
 
+			// TODO return it how it was, that s check u dont need to do million time
+
 			// Compare pixels
 			int smallRGB, bigRGB;
 			for (int x = 0; x < small.getWidth(); x++) {
@@ -976,6 +978,12 @@ public class imbot {
 		 */
 		private static final long MAX_INT = 0x0000_0000_FFFF_FFFFL;
 
+		/**
+		 * User defined runnable to be called
+		 * when an exit occurs.
+		 */
+		private static Runnable exitRunnable;
+
 		// Initialize
 		static {
 			// Initialize lastLocation with the current location
@@ -1040,7 +1048,12 @@ public class imbot {
 		private static void exit () {
 			System.out.println("Imbot was interrupted.");
 
-			// Do what Itachi did
+			// Check if we have an exitRunnable to run
+			if (exitRunnable != null) {
+				exitRunnable.run();
+			}
+
+			// Finally, do what Itachi did
 			System.exit(0);
 		}
 	}
@@ -1076,6 +1089,28 @@ public class imbot {
 	 */
 	public static boolean isExitOnInterruption () {
 		return InterruptionHandler.exitOnInt;
+	}
+
+	/**
+	 * Set the runnable that will get called
+	 * when the program ends because of
+	 * an interruption. Useful
+	 * if you want to save the state
+	 * or the program to resume it
+	 * or something...
+	 * Can be <code>null</code> if
+	 * you want nothing to run.
+	 */
+	public static void setExitRunnable (Runnable runnable) {
+		InterruptionHandler.exitRunnable = runnable;
+	}
+
+	/**
+	 * @return the exitRunnable
+	 * @see #setExitRunnable(Runnable)
+	 */
+	public static Runnable getExitRunnable () {
+		return InterruptionHandler.exitRunnable;
 	}
 
 	/**
