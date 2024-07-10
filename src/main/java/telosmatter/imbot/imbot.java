@@ -184,7 +184,7 @@ public class imbot {
 			double moving_y = location.y;
 			double dist, velocity_x = 0, velocity_y = 0, wind_x = 0, wind_y = 0;
 
-			while ((dist = Math.hypot(moving_x - x,moving_y - y)) >= 1) {
+			while ((dist = Math.hypot(moving_x - x,moving_y - y)) >= 2) {
 				wind = Math.min(wind, dist);
 
 				if (dist >= targetArea) {
@@ -1209,26 +1209,31 @@ public class imbot {
 			}
 		}
 
+		/**
+		 * Keep the computer awake, until
+		 * you come back,
+		 * by periodically moving the mouse
+		 */
+		public static void stayAwake () {
+			setExitOnInterruption(true);
+			mse.setRealistic(true);
 
-//		/**
-//		 * Utility function to keep the computer from sleeping
-//		 * by periodically moving the mouse
-//		 * @param initial_delay	Delay to sleep before starting is milliseconds
-//		 */
-//		public static void STAY_AWAKE (int initial_delay) {
-//			sleep (initial_delay);
-//			move(SCREEN_WIDTH/2 +50, SCREEN_HEIGHT/2 +50);
-//			while (true) {
-//				slide(0, -100);
-//				sleep(2500);
-//				slide(-100, 0);
-//				sleep(2500);
-//				slide(0, 100);
-//				sleep(2500);
-//				slide(100, 0);
-//				sleep(2500);
-//			}
-//		}
+			mse.move(scr.CENTER.x +50, scr.CENTER.y +50);
+
+			final double SECS = 2.5;
+			final double DELTA = 0.5;
+			// Keep going around in a square
+			while (true) {
+				util.sleepsRandom(SECS, DELTA);
+				mse.slide(0, -100);
+				util.sleepsRandom(SECS, DELTA);
+				mse.slide(-100, 0);
+				util.sleepsRandom(SECS, DELTA);
+				mse.slide(0, 100);
+				util.sleepsRandom(SECS, DELTA);
+				mse.slide(100, 0);
+			}
+		}
 	}
 
 }
