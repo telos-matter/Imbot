@@ -621,41 +621,50 @@ public class imbot {
 	public static class img {
 
 		/**
+		 * A constant needed in {@link #isColorSimilar(int, int, float)}
+		 */
+		private static final float MAX_RGB_DISTANCE = (float)(255 * Math.sqrt(3));
+
+		/**
 		 * What {@link #isColorSimilar(Color, Color, float)} actually
 		 * uses. And other methods.
 		 * Uses 3D Euclidean distance.
 		 * @param tolerance a percentage between 0 and 100
+		 * @implNote this method is called millions
+		 * of times, so it's optimized for speed
+		 * and not ease of reading.
 		 */
-		private static boolean isColorSimilar (int rgbA, int rgbB, double tolerance) {
+		private static boolean isColorSimilar (int rgbA, int rgbB, float tolerance) {
 			// If there is no tolerance, then the colors must be exact
 			if (tolerance == 0) {
 				return rgbA == rgbB;
 			}
 
-			// Otherwise calculate distance, to do so
+			// Define needed variables
+			int rA, gA, bA, rB, gB, bB;
+
+			// Now calculate the distance, to do so:
 			// - First unpack the components:
-			int rA, gA, bA;
-			rA = (rgbA >> 16) & 0xFF;
-			gA = (rgbA >> 8)  & 0xFF;
-			bA = (rgbA)       & 0xFF;
-			int rB, gB, bB;
-			rB = (rgbB >> 16) & 0xFF;
-			gB = (rgbB >> 8)  & 0xFF;
-			bB = (rgbB)       & 0xFF;
+			rA = rgbA >> 16 & 0xFF; // Red 	  in A
+			gA = rgbA >> 8  & 0xFF; // Green  in A
+			bA = rgbA       & 0xFF; // Blue   in A
+			rB = rgbB >> 16 & 0xFF; // Red   in B
+			gB = rgbB >> 8  & 0xFF; // Green in B
+			bB = rgbB       & 0xFF; // Blue  in B
 
 			// - Then calculate the 3D distance between the components
-			int r, g, b;
-			r = (rA - rB); r *= r;
-			g = (gA - gB); g *= g;
-			b = (bA - bB); b *= b;
-			double dist = Math.sqrt(r + g + b);
+			// We will not need the variables anymore so we can use them
+			// to store the result
+			rA -= rB; rA *= rA; // (rA - rB) ^ 2
+			gA -= gB; gA *= gA; // (gA - gB) ^ 2
+			bA -= bB; bA *= bA; // (bA - bB) ^ 2
 
-			// Now, normalize it:
-			final double MAX_DISTANCE = 255 * Math.sqrt(3);
-			dist /= MAX_DISTANCE;
+			// And while calculating the distance, might just as well
+			// normalize the value and do one write
+			final float normalizedDist = ((float) Math.sqrt(rA + gA + bA)) / MAX_RGB_DISTANCE;
 
 			// Finally compare
-			return (dist * 100) <= tolerance; // It's better to multiply than to divide
+			return (normalizedDist * 100) <= tolerance; // It's better to multiply than to divide
 		}
 
 		/**
