@@ -182,7 +182,7 @@ public class imbot {
 			double moving_y = location.y;
 			double dist, velocity_x = 0, velocity_y = 0, wind_x = 0, wind_y = 0;
 
-			while ((dist = Math.hypot(moving_x - x,moving_y - y)) >= 2) { // TODO was 1 made it 2. Check how it affects
+			while ((dist = Math.hypot(moving_x - x,moving_y - y)) >= 1) {
 				wind = Math.min(wind, dist);
 
 				if (dist >= targetArea) {
