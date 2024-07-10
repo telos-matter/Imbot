@@ -55,6 +55,19 @@ public class imbot {
 		private static final int RIGHT_BUTTON = InputEvent.getMaskForButton(3);
 
 		/**
+		 * Cooldown duration for {@link #robotMove(int, int)}
+		 * in nanoseconds. This is to avoid false
+		 * triggers of exitOnInterruption when there
+		 * is continuous consecutive rapid movements.
+		 */
+		private static final long COOLDOWN_DURATION = 2_500_000;
+		/**
+		 * When was {@link #robotMove(int, int)} last called
+		 * according to {@link System#nanoTime()}
+		 */
+		private static long previous = System.nanoTime();
+
+		/**
 		 * Should the movement be realistic (human like)
 		 * or robotic (linear / instant movements).
 		 */
@@ -119,9 +132,20 @@ public class imbot {
 		 * called
 		 */
 		private static void robotMove (int x, int y) {
-			// In this order
+			// Check if the cooldown has elapsed
+			long elapsedTime = System.nanoTime() - previous;
+			long cooldownRemainedMs = (COOLDOWN_DURATION - elapsedTime) / 1_000_000;
+			if (cooldownRemainedMs > 0) {
+				// If not, sleep what's left
+				util.sleep(cooldownRemainedMs);
+			}
+
+			// Then, move and register last location. In this order
 			BOT.mouseMove(x, y);
 			InterruptionHandler.setLastLocation(x, y);
+
+			// And mark for next cooldown
+			previous = System.nanoTime();
 		}
 
 		/**
@@ -1016,7 +1040,9 @@ public class imbot {
 	 * if the user is trying to interrupt it trough
 	 * mouse movements.
 	 * If this false triggers when there is rapid
-	 * movements please do contact me.
+	 * movements please do contact me, or
+	 * increase {@link mse#COOLDOWN_DURATION} by
+	 * a couple ms.
 	 */
 	public static void setExitOnInterruption (boolean value) {
 		InterruptionHandler.exitOnInt = value;
