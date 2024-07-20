@@ -593,7 +593,7 @@ public class imbot {
 				location = img.locateSubImage(image, captureScreen(zone), differenceThreshold, colorTolerance);
 				duration -= (System.nanoTime() - start);
 
-			} while (location != null && duration >= 0);
+			} while (location == null && duration >= 0);
 
 			// If the location should be screen relative, then adjust it
 			if (screenRelative && location != null) {
