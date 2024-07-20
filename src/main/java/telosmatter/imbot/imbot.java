@@ -985,6 +985,13 @@ public class imbot {
 	private static class InterruptionHandler {
 
 		/**
+		 * If the main thread is dead, then the
+		 * thread used here should also end.
+		 */
+		private static final Thread MAIN_THREAD = Thread.currentThread();
+
+
+		/**
 		 * Whether we should actually exit if
 		 * the user is trying to interrupt or not
 		 */
@@ -1024,6 +1031,10 @@ public class imbot {
 				while (true) {
 					if (exitOnInt && isUserInterrupting()) {
 						exit();
+						break;
+					}
+
+					if (!MAIN_THREAD.isAlive()) {
 						break;
 					}
 				}
