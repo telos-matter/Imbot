@@ -782,6 +782,56 @@ public class imbot {
 			rgb[2] = (value >>  (0)) & 0xFF; // Blue
 			return rgb;
 		}
+
+		/**
+		 * Iterates over the pixels of the two images
+		 * and returns the absolute difference between
+		 * the colors. Each color component is subtracted
+		 * individually, and the returned array contains those components
+		 * back together. For example, if <code>imageA</code>'s first
+		 * pixel is <code>(100, 20, 255)</code> and <code>imageB</code>'s
+		 * first pixel is <code>(50, 100, 200)</code>, then
+		 * the first element of the returned array would be
+		 * the RGB value of this color <code>(50, 80, 55)</code>.
+		 * @return an array representing the absolute difference
+		 * between each pixel in the two images.
+		 * @throws IllegalArgumentException if the two images are not the same size
+		 */
+		public static int [][] imageDifference (BufferedImage imageA, BufferedImage imageB) {
+			if (imageA.getWidth() != imageB.getWidth() ||
+					imageA.getHeight() != imageB.getHeight()) {
+				throw new IllegalArgumentException("Images must be of the same size!");
+			}
+
+			// Needed variables
+			int rgbA, rA, gA, bA, rgbB, rB, gB, bB;
+			// Where to put the result
+			int [][] diff = new int[imageA.getWidth()][imageA.getHeight()];
+			for (int i = 0; i < imageA.getWidth(); i++) {
+				for (int j= 0; j < imageA.getHeight(); j++) {
+					// Get the colors
+					rgbA = imageA.getRGB(i, j);
+					rgbB = imageB.getRGB(i, j);
+					// Get the components
+					rA = rgbA >> 16 & 0xFF; // Red 	  in A
+					gA = rgbA >> 8  & 0xFF; // Green  in A
+					bA = rgbA       & 0xFF; // Blue   in A
+					rB = rgbB >> 16 & 0xFF; // Red   in B
+					gB = rgbB >> 8  & 0xFF; // Green in B
+					bB = rgbB       & 0xFF; // Blue  in B
+					// Get the difference
+					rA = Math.abs(rA - rB);
+					gA = Math.abs(gA - gB);
+					bA = Math.abs(bA - bB);
+					// Reconstruct the color
+					rgbA = 0;
+					rgbA |= rA << 16 | gA << 8 | bA;
+					diff[i][j] = rgbA;
+				}
+			}
+
+			return diff;
+		}
 	}
 
 	/**
