@@ -806,9 +806,9 @@ public class imbot {
 			// Needed variables
 			int rgbA, rA, gA, bA, rgbB, rB, gB, bB;
 			// Where to put the result
-			int [][] diff = new int[imageA.getWidth()][imageA.getHeight()];
-			for (int i = 0; i < imageA.getWidth(); i++) {
-				for (int j= 0; j < imageA.getHeight(); j++) {
+			int [][] diff = new int[imageA.getHeight()][imageA.getWidth()];
+			for (int j = 0; j < imageA.getHeight(); j++) {
+				for (int i = 0; i < imageA.getWidth(); i++) {
 					// Get the colors
 					rgbA = imageA.getRGB(i, j);
 					rgbB = imageB.getRGB(i, j);
@@ -826,7 +826,7 @@ public class imbot {
 					// Reconstruct the color
 					rgbA = 0;
 					rgbA |= rA << 16 | gA << 8 | bA;
-					diff[i][j] = rgbA;
+					diff[j][i] = rgbA;
 				}
 			}
 
